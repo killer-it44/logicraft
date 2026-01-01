@@ -1,4 +1,4 @@
-import { NodeRenderer } from './nodeRenderer.js'
+import { NodeRenderer } from './node-renderer.js'
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
 
@@ -6,7 +6,7 @@ const easeInOut = (t) => 0.5 * (1 - Math.cos(Math.PI * clamp(t, 0, 1)))
 
 const distance = (a, b) => Math.hypot(b.x - a.x, b.y - a.y)
 
-export class WireAnimator {
+export class SceneRenderer {
     constructor(canvas) {
         this.canvas = canvas
         this.ctx = canvas.getContext('2d')

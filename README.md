@@ -18,13 +18,14 @@ logisiml/
       ├─ index.html       # Minimal shell loading Preact + canvas
       ├─ styles.css       # Sleek minimal tokens
       ├─ main.js          # Bootstraps Preact + canvas
-      ├─ wire.js          # Canvas renderer for wires
+      ├─ demoScene.json   # Sample scene data used on load
+      ├─ scene-renderer.js # Canvas renderer for wires + nodes
       ├─ simulation.js    # Tick controller / future simulation hook
-      └─ nodeRenderer.js  # Node markers/labels overlay
+      └─ node-renderer.js  # Node markers/labels overlay
 ```
 
 ## Next Steps
-1. Expand wire animator to handle multi-segment definitions.
+1. Expand scene renderer to handle multi-segment definitions.
 2. Prototype a tiny scene graph viewer for multiple wires/nodes.
 3. Separate simulation tick logic into a dedicated module/worker boundary plan.
 
@@ -33,11 +34,11 @@ logisiml/
 ### Single-thread baseline
 1. **UI thread components**
       - `TickSimulation`: orchestrates tick timing, owns play/pause/step, emits progress updates.
-      - `WireAnimator`: reacts to scene mutations and renders wires/nodes.
+      - `SceneRenderer`: reacts to scene mutations and renders wires/nodes.
       - `App` state: holds `scene`, dispatches control intents (toggle inputs, move nodes), and forwards mutations to both simulation and renderer.
 2. **Data flow**
       - `App` passes canonical `scene` (nodes, wires, nets) to renderer via `setScene(scene)`.
-      - `TickSimulation` calls `onUpdate(progress)` each frame; handler mutates `scene.wires[*].signal` and triggers `WireAnimator.draw(progress)`.
+      - `TickSimulation` calls `onUpdate(progress)` each frame; handler mutates `scene.wires[*].signal` and triggers `SceneRenderer.draw(progress)`.
       - Inputs (UI toggles, clocks) dispatch `simulationRef.current.queueEvent({ type: 'input', id, value })` to update logical state before next tick.
 
 ### Worker-ready abstraction
