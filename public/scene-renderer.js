@@ -98,8 +98,13 @@ export class SceneRenderer {
         }
 
         this.strokeSegments(ctx, segments, style.width, style.idle)
-        const phase = clamp(wire.signal?.phase ?? this.progress, 0, 1)
-        const bitPoint = this.strokeActive(ctx, segments, style.width, style.active, phase)
+
+        const isHigh = (wire.signal?.value ?? 0) >= 1
+        let bitPoint = null
+        if (isHigh) {
+            const phase = clamp(wire.signal?.phase ?? this.progress, 0, 1)
+            bitPoint = this.strokeActive(ctx, segments, style.width, style.active, phase)
+        }
         this.drawBit(ctx, bitPoint, style.active, style.bitRadius)
     }
 

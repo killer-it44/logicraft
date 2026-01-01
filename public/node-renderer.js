@@ -11,7 +11,7 @@ export class NodeRenderer {
         if (!this.nodes?.length) return
         this.nodes.forEach((node) => {
             const color = this.colorForType(node.type)
-            this.drawMarker(ctx, node.position, color)
+            this.drawMarker(ctx, node, color)
             if (node.label) this.drawLabel(ctx, node)
         })
     }
@@ -29,8 +29,8 @@ export class NodeRenderer {
         }
     }
 
-    drawMarker(ctx, position, color) {
-        const { x, y } = position
+    drawMarker(ctx, node, color) {
+        const { x, y } = node.position
         ctx.fillStyle = '#050607'
         ctx.strokeStyle = color
         ctx.lineWidth = 2
@@ -38,12 +38,19 @@ export class NodeRenderer {
         ctx.arc(x, y, 11, 0, Math.PI * 2)
         ctx.fill()
         ctx.stroke()
+
+        const hasValue = typeof node.value === 'number'
+        ctx.fillStyle = hasValue && node.value ? color : '#1b2530'
+        ctx.beginPath()
+        ctx.arc(x, y, hasValue ? 6 : 4, 0, Math.PI * 2)
+        ctx.fill()
     }
 
     drawLabel(ctx, node) {
         ctx.font = '13px Space Grotesk, system-ui'
         ctx.fillStyle = '#e6e7ef'
         ctx.textBaseline = 'top'
-        ctx.fillText(node.label, node.position.x + 14, node.position.y - 18)
+        const suffix = typeof node.value === 'number' ? ` (${node.value})` : ''
+        ctx.fillText(`${node.label}${suffix}`, node.position.x + 14, node.position.y - 18)
     }
 }

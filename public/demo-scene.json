@@ -4,7 +4,8 @@
             "id": "in-a",
             "label": "Input A",
             "position": { "x": 110, "y": 120 },
-            "type": "input"
+            "type": "input",
+            "value": 0
         },
         {
             "id": "out-a",
@@ -16,7 +17,8 @@
             "id": "in-b",
             "label": "Input B",
             "position": { "x": 110, "y": 260 },
-            "type": "input"
+            "type": "input",
+            "value": 0
         },
         {
             "id": "out-b",
@@ -34,7 +36,7 @@
                 { "from": { "x": 120, "y": 120 }, "to": { "x": 420, "y": 120 } },
                 { "from": { "x": 420, "y": 120 }, "to": { "x": 560, "y": 200 } }
             ],
-            "signal": { "value": 0, "phase": 0, "offset": 0 },
+            "signal": { "value": 0, "phase": 0 },
             "style": { "width": 8 }
         },
         {
@@ -46,7 +48,7 @@
                 { "from": { "x": 260, "y": 260 }, "to": { "x": 260, "y": 340 } },
                 { "from": { "x": 260, "y": 340 }, "to": { "x": 520, "y": 340 } }
             ],
-            "signal": { "value": 0, "phase": 0, "offset": 0.3 },
+            "signal": { "value": 0, "phase": 0 },
             "style": { "width": 8, "active": "#7fc8ff" }
         }
     ]

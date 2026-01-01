@@ -25,9 +25,11 @@ logisiml/
 ```
 
 ## Next Steps
-1. Expand scene renderer to handle multi-segment definitions.
-2. Prototype a tiny scene graph viewer for multiple wires/nodes.
-3. Separate simulation tick logic into a dedicated module/worker boundary plan.
+1. Enrich the scene schema (node roles, net metadata, future gate shells) so later logic work doesn’t require reshuffling saved scenes.
+2. Make sure it can be configured how many ticks should happen per clock cycle to control the speed. Maybe 5 is a good default / starting value.
+3. Introduce a lightweight scene validation helper that warns when wires reference missing nodes or layout data is inconsistent.
+4. Lock down the simulation-controller abstraction (`start/stop/reset/step/sendInput/setScene`) so swapping in a worker-backed version is trivial.
+5. Draft the worker messaging scaffold (message types, optional echo worker) to smooth the eventual move off the main thread.
 
 ## Simulation / Rendering Split Plan
 

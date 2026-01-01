@@ -2,6 +2,10 @@ import { html, render, useRef, useState, useEffect } from 'https://unpkg.com/htm
 import { SceneRenderer } from './scene-renderer.js'
 import { SimulationControllerInline } from './simulation-controller.js'
 
+const NODE_HIT_RADIUS = 16
+
+const distanceBetween = (a, b) => Math.hypot(a.x - b.x, a.y - b.y)
+
 const App = () => {
     const canvasRef = useRef(null)
     const rendererRef = useRef(null)
@@ -66,6 +70,28 @@ const App = () => {
     }, [scene])
 
     useEffect(() => {
+        const canvas = canvasRef.current
+        if (!canvas || !scene) return undefined
+
+        const handleClick = (event) => {
+            if (!sceneRef.current || !simulationRef.current) return
+            const rect = canvas.getBoundingClientRect()
+            const point = {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            }
+            const targetNode = findInputNodeAt(point)
+            if (!targetNode) return
+            toggleInputNodeValue(targetNode)
+        }
+
+        canvas.addEventListener('click', handleClick)
+        return () => {
+            canvas.removeEventListener('click', handleClick)
+        }
+    }, [scene])
+
+    useEffect(() => {
         if (!simulationRef.current || stepping) return
         running ? simulationRef.current.start() : simulationRef.current.stop()
     }, [running, stepping])
@@ -98,6 +124,22 @@ const App = () => {
         if (!simulationRef.current || running || stepping) return
         setStepping(true)
         simulationRef.current.step().finally(() => setStepping(false))
+    }
+
+    const findInputNodeAt = (point) => {
+        const nodes = sceneRef.current?.nodes || []
+        return nodes.find(
+            (node) => node.type === 'input' && distanceBetween(node.position, point) <= NODE_HIT_RADIUS
+        )
+    }
+
+    const toggleInputNodeValue = (node) => {
+        if (!simulationRef.current) return
+        const nextValue = node.value === 1 ? 0 : 1
+        simulationRef.current.sendInput({ id: node.id, value: nextValue }).then(() => {
+            rendererRef.current?.setScene(sceneRef.current)
+            rendererRef.current?.draw()
+        })
     }
 
     if (loadingScene) {

@@ -45,6 +45,10 @@ export class SimulationControllerInline {
 
     sendInput({ id, value }) {
         this.pendingInputs.set(id, value)
+        if (this.scene?.nodes) {
+            const node = this.scene.nodes.find((candidate) => candidate.id === id)
+            if (node) node.value = value
+        }
         return Promise.resolve()
     }
 
@@ -55,13 +59,19 @@ export class SimulationControllerInline {
 
     applyWireSignals(progress) {
         if (!this.scene?.wires) return
+        const nodeLookup = this.scene?.nodes
+            ? new Map(this.scene.nodes.map((node) => [node.id, node]))
+            : null
         this.scene.wires.forEach((wire) => {
             if (!wire.signal) wire.signal = {}
-            const offset = typeof wire.signal.offset === 'number' ? wire.signal.offset : 0
-            const phase = (progress + offset) % 1
-            const normalized = phase < 0 ? phase + 1 : phase
+            const normalized = ((progress % 1) + 1) % 1
             wire.signal.phase = normalized
-            wire.signal.value = normalized > 0.5 ? 1 : 0
+            const sourceValue = nodeLookup?.get(wire.source)?.value
+            if (typeof sourceValue === 'number') {
+                wire.signal.value = sourceValue
+            } else {
+                wire.signal.value = normalized > 0.5 ? 1 : 0
+            }
         })
     }
 
