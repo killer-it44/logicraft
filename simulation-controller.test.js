@@ -3,8 +3,9 @@ import assert from 'node:assert/strict'
 
 import Circuit, { ToggleSource, DisplayProbe, NotGate, AndGate, Wire } from './circuit.js'
 import { SimulationController } from './simulation-controller.js'
+import { readFileSync } from 'node:fs'
 
-describe('models', () => {
+describe('circuit', () => {
     it('shows the pin values as initialized at the beginning', () => {
         const source0 = new ToggleSource('source0', false)
         assert.equal(source0.pins.out.value, false)
@@ -36,7 +37,7 @@ describe('models', () => {
         andGate.pins.in0.value = true
         andGate.process()
         assert.equal(andGate.pins.out.value, false)
-        
+
         andGate.pins.in1.value = true
         andGate.process()
         assert.equal(andGate.pins.out.value, true)
@@ -53,6 +54,41 @@ describe('models', () => {
         source.setActivated(false)
         wire.propagateSignal()
         assert.equal(probe.pins.in.value, false)
+    })
+
+    it('can be parsed from a json', () => {
+        const json = {
+            components: [
+                { id: 'source', type: 'source/toggle', activated: true },
+                { id: 'probe', type: 'probe/display' }
+            ],
+            wires: [
+                { id: 'wire', source: 'source/out', target: 'probe/in' }
+            ]
+        }
+
+        const circuit = Circuit.fromJSON(json)
+
+        assert.equal(circuit.components.length, 2)
+        assert.equal(circuit.wires.length, 1)
+
+        const source = circuit.components.find(c => c.id === 'source')
+        const probe = circuit.components.find(c => c.id === 'probe')
+        const wire = circuit.wires[0]
+
+        assert(source instanceof ToggleSource)
+        assert.equal(source.activated, true)
+        assert(probe instanceof DisplayProbe)
+        assert.equal(wire.sourcePin, source.pins.out)
+        assert.equal(wire.targetPin, probe.pins.in)
+    })
+
+    it('loads the demo-circuit.json correctly from the file system', () => {
+        const demoCircuitJson = JSON.parse(readFileSync('./demo-circuit.json', 'utf-8'))
+        const circuit = Circuit.fromJSON(demoCircuitJson)
+
+        assert.equal(circuit.components.length, 5)
+        assert.equal(circuit.wires.length, 4)
     })
 })
 

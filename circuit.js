@@ -25,7 +25,7 @@ export default class Circuit {
             const sourcePin = components.find(c => c.id === sourceCompId).pins[sourcePinName]
             const [targetCompId, targetPinName] = wireJson.target.split('/')
             const targetPin = components.find(c => c.id === targetCompId).pins[targetPinName]
-            new Wire(wireJson.id, sourcePin, targetPin)
+            return new Wire(wireJson.id, sourcePin, targetPin)
         })
         return new Circuit(components, wires)
     }
