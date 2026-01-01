@@ -98,6 +98,7 @@ Goal: describe circuits in a way that the renderer can draw any number of wire s
             "value": 1
    }
    ```
+- **Gate node**: same structure, but multiple pins (e.g., input + output) and a `type` like `not-gate`. Simulation derives its output value from incoming pin signals and exposes it to connected wires.
 - **Wire**: ordered set of segments connecting two endpoints (node + specific pin) plus style metadata.
    ```json
    {

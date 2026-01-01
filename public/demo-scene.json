@@ -44,13 +44,31 @@
         {
             "id": "out-b",
             "label": "Probe B",
-            "position": { "x": 520, "y": 340 },
+            "position": { "x": 560, "y": 260 },
             "type": "binary-display",
             "pins": [
                 {
                     "id": "out-b-in",
                     "kind": "input",
-                    "position": { "x": 506, "y": 340 }
+                    "position": { "x": 546, "y": 260 }
+                }
+            ]
+        },
+        {
+            "id": "not-1",
+            "label": "NOT",
+            "position": { "x": 340, "y": 260 },
+            "type": "not-gate",
+            "pins": [
+                {
+                    "id": "not-1-in",
+                    "kind": "input",
+                    "position": { "x": 320, "y": 260 }
+                },
+                {
+                    "id": "not-1-out",
+                    "kind": "output",
+                    "position": { "x": 360, "y": 260 }
                 }
             ]
         }
@@ -70,14 +88,23 @@
         {
             "id": "wire-b",
             "source": { "node": "in-b", "pin": "in-b-out" },
-            "target": { "node": "out-b", "pin": "out-b-in" },
+            "target": { "node": "not-1", "pin": "not-1-in" },
             "segments": [
                 { "from": { "x": 124, "y": 260 }, "to": { "x": 260, "y": 260 } },
-                { "from": { "x": 260, "y": 260 }, "to": { "x": 260, "y": 340 } },
-                { "from": { "x": 260, "y": 340 }, "to": { "x": 506, "y": 340 } }
+                { "from": { "x": 260, "y": 260 }, "to": { "x": 320, "y": 260 } }
             ],
             "signal": { "value": 0, "phase": 0 },
             "style": { "width": 8, "active": "#7fc8ff" }
+        },
+        {
+            "id": "wire-c",
+            "source": { "node": "not-1", "pin": "not-1-out" },
+            "target": { "node": "out-b", "pin": "out-b-in" },
+            "segments": [
+                { "from": { "x": 360, "y": 260 }, "to": { "x": 546, "y": 260 } }
+            ],
+            "signal": { "value": 0, "phase": 0 },
+            "style": { "width": 8, "active": "#f6d365" }
         }
     ]
 }

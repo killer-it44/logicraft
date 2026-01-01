@@ -110,6 +110,9 @@ const renderPins = (node, color) => {
 }
 
 const renderNode = (node, { onToggleNode }) => {
+    if (node.type === 'not-gate') {
+        return renderNotGate(node)
+    }
     const color = colorForType(node.type)
     const isToggle = node.type === 'digital-toggle'
     const hasValue = typeof node.value === 'number'
@@ -148,12 +151,58 @@ const renderNode = (node, { onToggleNode }) => {
     `
 }
 
+const renderNotGate = (node) => {
+    const color = colorForType(node.type)
+    const outputHigh = node.value === 1
+    const size = 34
+    const half = size / 2
+    const { x, y } = node.position
+    const left = x - half
+    const right = x + half
+    const top = y - half
+    const bottom = y + half
+
+    return html`
+        <g key=${node.id} class="node gate">
+            <path
+                d=${`M ${left} ${top} L ${left} ${bottom} L ${right} ${y} Z`}
+                fill=${outputHigh ? '#142b1a' : '#050607'}
+                stroke=${color}
+                stroke-width="2"
+            />
+            <circle
+                cx=${right + 8}
+                cy=${y}
+                r="5"
+                fill=${outputHigh ? color : '#050607'}
+                stroke=${color}
+                stroke-width="2"
+            />
+            ${renderPins(node, color)}
+            ${node.label && html`
+                <text
+                    x=${x - 10}
+                    y=${y - half - 10}
+                    fill="#e6e7ef"
+                    font-size="12"
+                    font-family="'Space Grotesk', system-ui"
+                    text-anchor="middle"
+                >
+                    ${node.label}
+                </text>
+            `}
+        </g>
+    `
+}
+
 const colorForType = (type) => {
     switch (type) {
         case 'digital-toggle':
             return '#6decb9'
         case 'binary-display':
             return '#7fc8ff'
+        case 'not-gate':
+            return '#f6d365'
         case 'junction':
             return '#f6d365'
         default:

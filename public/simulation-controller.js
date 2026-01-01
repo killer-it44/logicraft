@@ -5,6 +5,11 @@ const nodeIdFromEndpoint = (endpoint) => {
     return typeof endpoint === 'string' ? endpoint : endpoint.node
 }
 
+const pinIdFromEndpoint = (endpoint) => {
+    if (!endpoint || typeof endpoint === 'string') return undefined
+    return endpoint.pin
+}
+
 export class SimulationControllerInline {
     constructor({ scene, duration = 1200, onRender } = {}) {
         this.scene = scene
@@ -68,6 +73,7 @@ export class SimulationControllerInline {
             ? new Map(this.scene.nodes.map((node) => [node.id, node]))
             : null
         const normalized = ((progress % 1) + 1) % 1
+        const pinInputs = new Map()
         this.scene.wires.forEach((wire) => {
             if (!wire.signal) wire.signal = {}
             wire.signal.phase = normalized
@@ -78,25 +84,31 @@ export class SimulationControllerInline {
             } else {
                 wire.signal.value = normalized > 0.5 ? 1 : 0
             }
+
+            const targetPin = pinIdFromEndpoint(wire.target)
+            if (targetPin) {
+                pinInputs.set(targetPin, wire.signal.value)
+            }
         })
-        if (nodeLookup) this.syncDisplayValues(nodeLookup)
+        if (nodeLookup) this.applyNodeSignals(nodeLookup, pinInputs)
     }
 
-    syncDisplayValues(nodeLookup) {
+    applyNodeSignals(nodeLookup, pinInputs) {
         this.scene.nodes.forEach((node) => {
-            if (node.type === 'binary-display' && typeof node.value !== 'number') {
-                node.value = 0
+            if (node.type === 'binary-display') {
+                node.value = this.readPinValue(node, pinInputs, 'input', 0)
+            } else if (node.type === 'not-gate') {
+                const input = this.readPinValue(node, pinInputs, 'input', 0)
+                node.value = input ? 0 : 1
             }
         })
-        this.scene.wires.forEach((wire) => {
-            const targetId = nodeIdFromEndpoint(wire.target)
-            if (!targetId) return
-            const node = nodeLookup.get(targetId)
-            if (!node || node.type === 'digital-toggle') return
-            if (typeof wire.signal?.value === 'number') {
-                node.value = wire.signal.value
-            }
-        })
+    }
+
+    readPinValue(node, pinInputs, kind, defaultValue = 0) {
+        if (!node?.pins?.length) return defaultValue
+        const pin = node.pins.find((candidate) => candidate.kind === kind)
+        if (!pin) return defaultValue
+        return pinInputs.has(pin.id) ? pinInputs.get(pin.id) : defaultValue
     }
 
     destroy() {
