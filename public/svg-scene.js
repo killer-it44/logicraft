@@ -33,6 +33,40 @@ const pointAlongSegments = (segments, phase) => {
     return segments.at(-1)?.to ?? null
 }
 
+const trimSegments = (segments, startRatio, endRatio) => {
+    const total = totalLength(segments)
+    if (total === 0) return []
+    const start = total * clamp(startRatio, 0, 1)
+    const end = total * clamp(endRatio, 0, 1)
+    if (end <= start) return []
+    const trimmed = []
+    let traveled = 0
+    for (const segment of segments) {
+        const length = distance(segment.from, segment.to)
+        const segStart = traveled
+        const segEnd = traveled + length
+        const overlapStart = Math.max(start, segStart)
+        const overlapEnd = Math.min(end, segEnd)
+        if (overlapEnd > overlapStart) {
+            const startT = (overlapStart - segStart) / length
+            const endT = (overlapEnd - segStart) / length
+            trimmed.push({
+                from: {
+                    x: segment.from.x + (segment.to.x - segment.from.x) * startT,
+                    y: segment.from.y + (segment.to.y - segment.from.y) * startT
+                },
+                to: {
+                    x: segment.from.x + (segment.to.x - segment.from.x) * endT,
+                    y: segment.from.y + (segment.to.y - segment.from.y) * endT
+                }
+            })
+        }
+        traveled += length
+        if (traveled >= end) break
+    }
+    return trimmed
+}
+
 const renderBitGlowFilter = () => html`
     <defs>
         <filter id="bitGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -49,18 +83,40 @@ const renderWire = (wire) => {
     const segments = wire.segments || []
     if (!segments.length) return null
     const path = pathFromSegments(segments)
-    const length = totalLength(segments) || 1
-    const phase = clamp(wire.signal?.phase ?? 0, 0, 1)
-    const highlightLength = length * phase
+    const signal = wire.signal || {}
+    const inTransition = Boolean(signal.transitioning)
+    const progress = clamp(signal.transitionProgress ?? 0, 0, 1)
+    let highlightStart = 0
+    let highlightEnd = 0
+    let bitPoint = null
+
+    if (inTransition) {
+        if (signal.transitionDirection === 'fill') {
+            highlightStart = 0
+            highlightEnd = progress
+            bitPoint = pointAlongSegments(segments, clamp(progress, 0, 1))
+        } else {
+            highlightStart = progress
+            highlightEnd = 1
+        }
+    } else if (signal.currentValue === 1) {
+        highlightStart = 0
+        highlightEnd = 1
+    }
+
+    highlightStart = clamp(highlightStart, 0, 1)
+    highlightEnd = clamp(highlightEnd, 0, 1)
+    const highlightSegments = highlightEnd > highlightStart
+        ? trimSegments(segments, highlightStart, highlightEnd)
+        : []
+    const highlightPath = highlightSegments.length ? pathFromSegments(highlightSegments) : null
     const style = {
         width: wire.style?.width ?? 8,
         idle: wire.style?.idle ?? '#1b2530',
         active: wire.style?.active ?? '#5ee1a0',
         bitRadius: wire.style?.bitRadius ?? 9
     }
-    const isHigh = (wire.signal?.value ?? 0) >= 1
-    const bitPoint = isHigh ? pointAlongSegments(segments, phase) : null
-    const dashArray = isHigh ? `${highlightLength} ${Math.max(length - highlightLength, 0.0001)}` : null
+    const shouldShowBit = inTransition && signal.transitionDirection === 'fill' && bitPoint
 
     return html`
         <g key=${wire.id} class="wire">
@@ -71,17 +127,16 @@ const renderWire = (wire) => {
                 stroke-width=${style.width}
                 stroke-linecap="round"
             />
-            ${isHigh && html`
+            ${highlightPath && html`
                 <path
-                    d=${path}
+                    d=${highlightPath}
                     fill="none"
                     stroke=${style.active}
                     stroke-width=${style.width}
                     stroke-linecap="round"
-                    stroke-dasharray=${dashArray}
                 />
             `}
-            ${bitPoint && html`
+            ${shouldShowBit && html`
                 <circle
                     cx=${bitPoint.x}
                     cy=${bitPoint.y}

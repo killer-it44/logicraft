@@ -13,6 +13,7 @@ const App = () => {
     const [sceneError, setSceneError] = useState(null)
     const [sceneVersion, setSceneVersion] = useState(0)
     const [tickProgress, setTickProgress] = useState(0)
+    const [tickCount, setTickCount] = useState(0)
 
     useEffect(() => {
         let cancelled = false
@@ -48,8 +49,11 @@ const App = () => {
         simulationRef.current = new SimulationControllerInline({
             scene: sceneRef.current,
             duration,
-            onRender: (progress) => {
+            onRender: (progress, _scene, meta) => {
                 setTickProgress(progress)
+                if (typeof meta?.tickCount === 'number') {
+                    setTickCount(meta.tickCount)
+                }
             }
         })
         if (running) simulationRef.current.start()
@@ -87,6 +91,8 @@ const App = () => {
         }
         const shouldResume = running && !wasStepping
         simulationRef.current.reset({ resume: shouldResume })
+        setTickProgress(0)
+        setTickCount(0)
     }
 
     const handleStep = () => {
@@ -150,7 +156,7 @@ const App = () => {
                     onToggleNode=${handleToggleNodeValue}
                 />
                 <p style=${{ marginTop: '0.6rem', color: '#8f98ae', fontSize: '0.85rem' }}>
-                    tick: ${(tickProgress * 100).toFixed(0)}%
+                    tick ${tickCount} (${(tickProgress * 100).toFixed(0)}%)
                 </p>
             </div>
         </section>
