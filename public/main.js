@@ -1,15 +1,8 @@
 import { html, render, useRef, useState, useEffect } from 'https://unpkg.com/htm/preact/standalone.module.js'
-import { SceneRenderer } from './scene-renderer.js'
 import { SimulationControllerInline } from './simulation-controller.js'
-
-const NODE_HIT_RADIUS = 16
-
-const distanceBetween = (a, b) => Math.hypot(a.x - b.x, a.y - b.y)
-const isDigitalToggle = (node) => node?.type === 'digital-toggle'
+import { SceneSvg } from './svg-scene.js'
 
 const App = () => {
-    const canvasRef = useRef(null)
-    const rendererRef = useRef(null)
     const simulationRef = useRef(null)
     const sceneRef = useRef(null)
     const [running, setRunning] = useState(true)
@@ -18,6 +11,8 @@ const App = () => {
     const [scene, setScene] = useState(null)
     const [loadingScene, setLoadingScene] = useState(true)
     const [sceneError, setSceneError] = useState(null)
+    const [sceneVersion, setSceneVersion] = useState(0)
+    const [tickProgress, setTickProgress] = useState(0)
 
     useEffect(() => {
         let cancelled = false
@@ -30,6 +25,7 @@ const App = () => {
                 if (cancelled) return
                 sceneRef.current = data
                 setScene(data)
+                setSceneVersion((version) => version + 1)
             } catch (error) {
                 if (cancelled) return
                 console.error('Unable to load demo scene', error)
@@ -46,49 +42,21 @@ const App = () => {
     }, [])
 
     useEffect(() => {
-        if (!canvasRef.current || !scene) return undefined
+        if (!scene) return undefined
 
-        rendererRef.current = new SceneRenderer(canvasRef.current)
-        rendererRef.current.setScene(scene)
         sceneRef.current = scene
         simulationRef.current = new SimulationControllerInline({
             scene: sceneRef.current,
             duration,
-            onRender: (progress, scene) => {
-                rendererRef.current?.setScene(scene)
-                rendererRef.current?.draw(progress)
+            onRender: (progress) => {
+                setTickProgress(progress)
             }
         })
-        rendererRef.current.draw(0)
         if (running) simulationRef.current.start()
 
         return () => {
-            rendererRef.current?.destroy()
-            rendererRef.current = null
             simulationRef.current?.destroy()
             simulationRef.current = null
-        }
-    }, [scene])
-
-    useEffect(() => {
-        const canvas = canvasRef.current
-        if (!canvas || !scene) return undefined
-
-        const handleClick = (event) => {
-            if (!sceneRef.current || !simulationRef.current) return
-            const rect = canvas.getBoundingClientRect()
-            const point = {
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top
-            }
-            const targetNode = findInputNodeAt(point)
-            if (!targetNode) return
-            toggleInputNodeValue(targetNode)
-        }
-
-        canvas.addEventListener('click', handleClick)
-        return () => {
-            canvas.removeEventListener('click', handleClick)
         }
     }, [scene])
 
@@ -127,19 +95,11 @@ const App = () => {
         simulationRef.current.step().finally(() => setStepping(false))
     }
 
-    const findInputNodeAt = (point) => {
-        const nodes = sceneRef.current?.nodes || []
-        return nodes.find(
-            (node) => isDigitalToggle(node) && distanceBetween(node.position, point) <= NODE_HIT_RADIUS
-        )
-    }
-
-    const toggleInputNodeValue = (node) => {
+    const handleToggleNodeValue = (node) => {
         if (!simulationRef.current) return
         const nextValue = node.value === 1 ? 0 : 1
         simulationRef.current.sendInput({ id: node.id, value: nextValue }).then(() => {
-            rendererRef.current?.setScene(sceneRef.current)
-            rendererRef.current?.draw()
+            setSceneVersion((version) => version + 1)
         })
     }
 
@@ -182,7 +142,17 @@ const App = () => {
                 </label>
             </div>
 
-            <canvas ref=${canvasRef} width="900" height="420"></canvas>
+            <div class="scene-shell">
+                <${SceneSvg}
+                    key=${sceneVersion}
+                    scene=${sceneRef.current}
+                    progress=${tickProgress}
+                    onToggleNode=${handleToggleNodeValue}
+                />
+                <p style=${{ marginTop: '0.6rem', color: '#8f98ae', fontSize: '0.85rem' }}>
+                    tick: ${(tickProgress * 100).toFixed(0)}%
+                </p>
+            </div>
         </section>
     `
 }

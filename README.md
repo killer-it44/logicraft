@@ -19,7 +19,8 @@ logisiml/
       ├─ styles.css       # Sleek minimal tokens
       ├─ main.js          # Bootstraps Preact + canvas
       ├─ demoScene.json   # Sample scene data used on load
-      ├─ scene-renderer.js # Canvas renderer for wires + nodes
+      ├─ svg-scene.js     # Preact SVG renderer (current UI)
+      ├─ scene-renderer.js # Legacy canvas renderer for experiments
       ├─ simulation.js    # Tick controller / future simulation hook
       └─ node-renderer.js  # Node markers/labels overlay
 ```
@@ -36,11 +37,11 @@ logisiml/
 ### Single-thread baseline
 1. **UI thread components**
       - `TickSimulation`: orchestrates tick timing, owns play/pause/step, emits progress updates.
-      - `SceneRenderer`: reacts to scene mutations and renders wires/nodes.
+      - `SceneSvg`: reacts to scene mutations and renders wires/nodes using SVG.
       - `App` state: holds `scene`, dispatches control intents (toggle inputs, move nodes), and forwards mutations to both simulation and renderer.
 2. **Data flow**
       - `App` passes canonical `scene` (nodes, wires, nets) to renderer via `setScene(scene)`.
-      - `TickSimulation` calls `onUpdate(progress)` each frame; handler mutates `scene.wires[*].signal` and triggers `SceneRenderer.draw(progress)`.
+      - `TickSimulation` calls `onUpdate(progress)` each frame; handler mutates `scene.wires[*].signal` and nudges `SceneSvg` (via state) to re-render.
       - Inputs (UI toggles, clocks) dispatch `simulationRef.current.queueEvent({ type: 'input', id, value })` to update logical state before next tick.
 
 ### Worker-ready abstraction
