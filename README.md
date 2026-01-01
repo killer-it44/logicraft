@@ -26,7 +26,7 @@ logisiml/
 
 ## Next Steps
 1. Enrich the scene schema (node roles, net metadata, future gate shells) so later logic work doesn’t require reshuffling saved scenes.
-2. Make sure it can be configured how many ticks should happen per clock cycle to control the speed. Maybe 5 is a good default / starting value.
+2. Add interactable input controls in the UI (e.g., click to toggle an input node) to prove the controller/renderer react to live edits.
 3. Introduce a lightweight scene validation helper that warns when wires reference missing nodes or layout data is inconsistent.
 4. Lock down the simulation-controller abstraction (`start/stop/reset/step/sendInput/setScene`) so swapping in a worker-backed version is trivial.
 5. Draft the worker messaging scaffold (message types, optional echo worker) to smooth the eventual move off the main thread.
@@ -84,21 +84,25 @@ logisiml/
 Goal: describe circuits in a way that the renderer can draw any number of wire segments while the simulation core manipulates only data, not canvas calls.
 
 ### Core entities
-- **Node**: named coordinate anchor in logical space.
+- **Node**: named coordinate anchor in logical space with zero or more pins describing where wires attach.
    ```json
    {
-         "id": "n1",
-         "label": "A",
-         "position": { "x": 120, "y": 80 },
-         "type": "input" // input|output|junction|gate-pin
+            "id": "toggle-a",
+            "label": "Toggle A",
+            "position": { "x": 120, "y": 80 },
+            "type": "digital-toggle",
+            "pins": [
+                  { "id": "toggle-a-out", "kind": "output", "position": { "x": 134, "y": 80 } }
+            ],
+            "value": 1
    }
    ```
-- **Wire**: ordered set of segments connecting two nodes (or node→junction→node) plus style metadata.
+- **Wire**: ordered set of segments connecting two endpoints (node + specific pin) plus style metadata.
    ```json
    {
          "id": "w1",
-         "source": "n1",
-         "target": "n2",
+            "source": { "node": "toggle-a", "pin": "toggle-a-out" },
+            "target": { "node": "probe-a", "pin": "probe-a-in" },
          "segments": [
                { "from": { "x": 120, "y": 80 }, "to": { "x": 220, "y": 80 } },
                { "from": { "x": 220, "y": 80 }, "to": { "x": 220, "y": 140 } }

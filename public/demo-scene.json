@@ -4,49 +4,77 @@
             "id": "in-a",
             "label": "Input A",
             "position": { "x": 110, "y": 120 },
-            "type": "input",
-            "value": 0
+            "type": "digital-toggle",
+            "value": 0,
+            "pins": [
+                {
+                    "id": "in-a-out",
+                    "kind": "output",
+                    "position": { "x": 124, "y": 120 }
+                }
+            ]
         },
         {
             "id": "out-a",
             "label": "Probe A",
             "position": { "x": 560, "y": 200 },
-            "type": "output"
+            "type": "binary-display",
+            "pins": [
+                {
+                    "id": "out-a-in",
+                    "kind": "input",
+                    "position": { "x": 546, "y": 200 }
+                }
+            ]
         },
         {
             "id": "in-b",
             "label": "Input B",
             "position": { "x": 110, "y": 260 },
-            "type": "input",
-            "value": 0
+            "type": "digital-toggle",
+            "value": 0,
+            "pins": [
+                {
+                    "id": "in-b-out",
+                    "kind": "output",
+                    "position": { "x": 124, "y": 260 }
+                }
+            ]
         },
         {
             "id": "out-b",
             "label": "Probe B",
             "position": { "x": 520, "y": 340 },
-            "type": "output"
+            "type": "binary-display",
+            "pins": [
+                {
+                    "id": "out-b-in",
+                    "kind": "input",
+                    "position": { "x": 506, "y": 340 }
+                }
+            ]
         }
     ],
     "wires": [
         {
             "id": "wire-a",
-            "source": "in-a",
-            "target": "out-a",
+            "source": { "node": "in-a", "pin": "in-a-out" },
+            "target": { "node": "out-a", "pin": "out-a-in" },
             "segments": [
-                { "from": { "x": 120, "y": 120 }, "to": { "x": 420, "y": 120 } },
-                { "from": { "x": 420, "y": 120 }, "to": { "x": 560, "y": 200 } }
+                { "from": { "x": 124, "y": 120 }, "to": { "x": 420, "y": 120 } },
+                { "from": { "x": 420, "y": 120 }, "to": { "x": 546, "y": 200 } }
             ],
             "signal": { "value": 0, "phase": 0 },
             "style": { "width": 8 }
         },
         {
             "id": "wire-b",
-            "source": "in-b",
-            "target": "out-b",
+            "source": { "node": "in-b", "pin": "in-b-out" },
+            "target": { "node": "out-b", "pin": "out-b-in" },
             "segments": [
-                { "from": { "x": 120, "y": 260 }, "to": { "x": 260, "y": 260 } },
+                { "from": { "x": 124, "y": 260 }, "to": { "x": 260, "y": 260 } },
                 { "from": { "x": 260, "y": 260 }, "to": { "x": 260, "y": 340 } },
-                { "from": { "x": 260, "y": 340 }, "to": { "x": 520, "y": 340 } }
+                { "from": { "x": 260, "y": 340 }, "to": { "x": 506, "y": 340 } }
             ],
             "signal": { "value": 0, "phase": 0 },
             "style": { "width": 8, "active": "#7fc8ff" }

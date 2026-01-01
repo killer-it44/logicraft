@@ -5,6 +5,7 @@ import { SimulationControllerInline } from './simulation-controller.js'
 const NODE_HIT_RADIUS = 16
 
 const distanceBetween = (a, b) => Math.hypot(a.x - b.x, a.y - b.y)
+const isDigitalToggle = (node) => node?.type === 'digital-toggle'
 
 const App = () => {
     const canvasRef = useRef(null)
@@ -129,7 +130,7 @@ const App = () => {
     const findInputNodeAt = (point) => {
         const nodes = sceneRef.current?.nodes || []
         return nodes.find(
-            (node) => node.type === 'input' && distanceBetween(node.position, point) <= NODE_HIT_RADIUS
+            (node) => isDigitalToggle(node) && distanceBetween(node.position, point) <= NODE_HIT_RADIUS
         )
     }
 

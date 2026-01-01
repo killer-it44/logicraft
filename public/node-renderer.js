@@ -12,15 +12,16 @@ export class NodeRenderer {
         this.nodes.forEach((node) => {
             const color = this.colorForType(node.type)
             this.drawMarker(ctx, node, color)
+            if (node.pins?.length) this.drawPins(ctx, node, color)
             if (node.label) this.drawLabel(ctx, node)
         })
     }
 
     colorForType(type) {
         switch (type) {
-            case 'input':
+            case 'digital-toggle':
                 return '#6decb9'
-            case 'output':
+            case 'binary-display':
                 return '#7fc8ff'
             case 'junction':
                 return '#f6d365'
@@ -44,6 +45,19 @@ export class NodeRenderer {
         ctx.beginPath()
         ctx.arc(x, y, hasValue ? 6 : 4, 0, Math.PI * 2)
         ctx.fill()
+    }
+
+    drawPins(ctx, node, color) {
+        node.pins.forEach((pin) => {
+            const { x, y } = pin.position
+            ctx.fillStyle = '#0f141c'
+            ctx.strokeStyle = color
+            ctx.lineWidth = 1.5
+            ctx.beginPath()
+            ctx.arc(x, y, 4, 0, Math.PI * 2)
+            ctx.fill()
+            ctx.stroke()
+        })
     }
 
     drawLabel(ctx, node) {

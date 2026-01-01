@@ -1,5 +1,10 @@
 import { TickSimulation } from './simulation.js'
 
+const nodeIdFromEndpoint = (endpoint) => {
+    if (!endpoint) return undefined
+    return typeof endpoint === 'string' ? endpoint : endpoint.node
+}
+
 export class SimulationControllerInline {
     constructor({ scene, duration = 1200, onRender } = {}) {
         this.scene = scene
@@ -62,15 +67,34 @@ export class SimulationControllerInline {
         const nodeLookup = this.scene?.nodes
             ? new Map(this.scene.nodes.map((node) => [node.id, node]))
             : null
+        const normalized = ((progress % 1) + 1) % 1
         this.scene.wires.forEach((wire) => {
             if (!wire.signal) wire.signal = {}
-            const normalized = ((progress % 1) + 1) % 1
             wire.signal.phase = normalized
-            const sourceValue = nodeLookup?.get(wire.source)?.value
+            const sourceId = nodeIdFromEndpoint(wire.source)
+            const sourceValue = sourceId ? nodeLookup?.get(sourceId)?.value : undefined
             if (typeof sourceValue === 'number') {
                 wire.signal.value = sourceValue
             } else {
                 wire.signal.value = normalized > 0.5 ? 1 : 0
+            }
+        })
+        if (nodeLookup) this.syncDisplayValues(nodeLookup)
+    }
+
+    syncDisplayValues(nodeLookup) {
+        this.scene.nodes.forEach((node) => {
+            if (node.type === 'binary-display' && typeof node.value !== 'number') {
+                node.value = 0
+            }
+        })
+        this.scene.wires.forEach((wire) => {
+            const targetId = nodeIdFromEndpoint(wire.target)
+            if (!targetId) return
+            const node = nodeLookup.get(targetId)
+            if (!node || node.type === 'digital-toggle') return
+            if (typeof wire.signal?.value === 'number') {
+                node.value = wire.signal.value
             }
         })
     }
