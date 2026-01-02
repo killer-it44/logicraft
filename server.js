@@ -2,11 +2,8 @@ import { createServer } from 'node:http'
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const ROOT_DIR = __dirname
+const ROOT_DIR = 'public'
 const DEFAULT_FILE = 'index.html'
 
 const MIME_TYPES = {
