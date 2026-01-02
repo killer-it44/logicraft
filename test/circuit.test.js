@@ -1,7 +1,7 @@
 import { it, describe } from 'node:test'
 import assert from 'node:assert/strict'
 
-import Circuit, { ToggleSource, DisplayProbe, NotGate, AndGate, OrGate, NandGate, Wire } from './circuit.js'
+import Circuit, { ToggleSource, DisplayProbe, NotGate, AndGate, OrGate, NandGate, Wire } from '../public/circuit.js'
 import { readFileSync } from 'node:fs'
 
 describe('circuit components', () => {
@@ -104,8 +104,8 @@ describe('circuit components', () => {
     })
 
     it('loads the demo-circuit.json correctly from the file system', () => {
-        const demoCircuitJson = JSON.parse(readFileSync('./demo-circuit.json', 'utf-8'))
-        const circuit = Circuit.fromJSON(demoCircuitJson)
+        const blueprintJson = JSON.parse(readFileSync('public/demo-blueprint.json', 'utf-8'))
+        const circuit = Circuit.fromJSON(blueprintJson.circuit)
 
         assert.equal(circuit.components.length, 5)
         assert.equal(circuit.wires.length, 4)

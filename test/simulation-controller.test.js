@@ -1,8 +1,8 @@
 import { it, describe } from 'node:test'
 import assert from 'node:assert/strict'
 
-import Circuit, { ToggleSource, DisplayProbe, Wire } from './circuit.js'
-import { SimulationController } from './simulation-controller.js'
+import Circuit, { ToggleSource, DisplayProbe, Wire } from '../public/circuit.js'
+import { SimulationController } from '../public/simulation-controller.js'
 
 describe('simulation controller', () => {
     it('still displays 0 after a tick when the source is not activated', () => {

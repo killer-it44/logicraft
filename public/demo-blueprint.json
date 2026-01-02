@@ -1,0 +1,108 @@
+{
+    "circuit": {
+        "components": [
+            {
+                "id": "toggle0",
+                "type": "source/toggle",
+                "activated": false
+            },
+            {
+                "id": "toggle1",
+                "type": "source/toggle",
+                "activated": false
+            },
+            {
+                "id": "not0",
+                "type": "gate/not"
+            },
+            {
+                "id": "and0",
+                "type": "gate/and"
+            },
+            {
+                "id": "display0",
+                "type": "probe/display"
+            }
+        ],
+        "wires": [
+            {
+                "id": "wire0",
+                "source": "toggle0/out",
+                "target": "not0/in"
+            },
+            {
+                "id": "wire1",
+                "source": "not0/out",
+                "target": "and0/in0"
+            },
+            {
+                "id": "wire2",
+                "source": "toggle1/out",
+                "target": "and0/in1"
+            },
+                    {
+                "id": "wire3",
+                "source": "and0/out",
+                "target": "display0/in"
+            }
+        ]
+    },
+    "visualization": {
+        "components": [
+            {
+                "id": "toggle0",
+                "label": "Input A",
+                "position": { "x": 110, "y": 120 }
+            },
+            {
+                "id": "display0",
+                "label": "Result",
+                "position": { "x": 560, "y": 200 }
+            },
+            {
+                "id": "toggle1",
+                "label": "Input B",
+                "position": { "x": 110, "y": 260 }
+            },
+            {
+                "id": "not0",
+                "label": "NOT",
+                "position": { "x": 340, "y": 260 }
+            },
+            {
+                "id": "and0",
+                "label": "AND",
+                "position": { "x": 400, "y": 160 }
+            }
+        ],
+        "wires": [
+            {
+                "id": "wire0",
+                "segments": [
+                    { "from": { "x": 160, "y": 140 }, "to": { "x": 250, "y": 140 } },
+                    { "from": { "x": 250, "y": 140 }, "to": { "x": 250, "y": 280 } },
+                    { "from": { "x": 250, "y": 280 }, "to": { "x": 340, "y": 280 } }
+                ]
+            },
+            {
+                "id": "wire1",
+                "segments": [
+                    { "from": { "x": 390, "y": 280 }, "to": { "x": 390, "y": 180 } },
+                    { "from": { "x": 390, "y": 180 }, "to": { "x": 400, "y": 180 } }
+                ]
+            },
+            {
+                "id": "wire2",
+                "segments": [
+                    { "from": { "x": 160, "y": 280 }, "to": { "x": 390, "y": 280 } }
+                ]
+            },
+            {
+                "id": "wire3",
+                "segments": [
+                    { "from": { "x": 450, "y": 180 }, "to": { "x": 550, "y": 180 } }
+                ]
+            }
+        ]
+    }
+}
