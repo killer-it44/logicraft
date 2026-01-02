@@ -177,29 +177,3 @@ export const WirePath = ({ id, segments, active = false }) => {
         />
     `
 }
-
-export const CircuitCanvas = ({ width = 800, height = 480, children }) => html`
-    <svg
-        width=${width}
-        height=${height}
-        viewBox=${`0 0 ${width} ${height}`}
-        style="background:#f8fafc;border-radius:20px;box-shadow:0 12px 30px rgba(15,23,42,0.12);"
-    >
-        <defs>
-            <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
-                <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#e2e8f0" stroke-width="1" />
-            </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" />
-        ${children}
-    </svg>
-`
-
-export const componentRenderers = {
-    'source/toggle': ToggleNode,
-    'gate/not': NotGateNode,
-    'gate/and': AndGateNode,
-    'gate/or': OrGateNode,
-    'gate/nand': NandGateNode,
-    'probe/display': DisplayProbeNode
-}

@@ -1,20 +1,26 @@
-import { render, html } from 'preact-standalone'
-import { CircuitCanvas, ToggleNode, WirePath } from './ui-components.js'
+import { render, html, useState } from 'preact-standalone'
+import { ToggleNode, WirePath } from './ui-components.js'
+import { Canvas } from './canvas.js'
 
-const segments = [
-                    { "from": { "x": 160, "y": 140 }, "to": { "x": 250, "y": 140 } },
-                    { "from": { "x": 250, "y": 140 }, "to": { "x": 250, "y": 280 } },
-                    { "from": { "x": 250, "y": 280 }, "to": { "x": 340, "y": 280 } }
-]
+const App = () => {
+    const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 })
 
-const App = () => html`
-    <main style="display:flex;justify-content:center;align-items:center;min-height:100vh;background:#e2e8f0;">
-        <${CircuitCanvas} width=800 height=480>
-            <${ToggleNode} id="toggle0" label="a" position=${{ x: 100, y: 100 }} activated=${false} / >
-            <${WirePath} id="wire0" segments=${segments} / >
-        <//>
-    </main>
-`
+    return html`
+        <main style="width: 100vw; height: 100vh; overflow: hidden;">
+            <${Canvas} onPointerMove=${setPointerPosition}>
+                <${ToggleNode} id="toggle0" label="Input" position=${{ x: 100, y: 100 }} activated=${false} />
+                <${WirePath} id="wire0" segments=${[
+                    { from: { x: 160, y: 140 }, to: { x: 250, y: 140 } },
+                    { from: { x: 250, y: 140 }, to: { x: 250, y: 280 } },
+                    { from: { x: 250, y: 280 }, to: { x: 340, y: 280 } }
+                ]} />
+            <//>
+            <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(255, 255, 255, 0.8); padding: 4px 8px; border-radius: 4px; font-family: sans-serif; font-size: 14px;">
+                x: ${Math.round(pointerPosition.x)}, y: ${Math.round(pointerPosition.y)}
+            </div>
+        </main>
+    `
+}
 
 const root = document.getElementById('app')
 render(html`<${App} />`, root)
