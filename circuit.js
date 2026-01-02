@@ -82,6 +82,38 @@ export class AndGate {
     }
 }
 
+export class OrGate {
+    constructor(id) {
+        this.id = id
+        this.type = 'gate/or'
+        this.pins = {
+            in0: { type: 'input', value: false },
+            in1: { type: 'input', value: false },
+            out: { type: 'output', value: false }
+        }
+    }
+
+    process() {
+        this.pins['out'].value = this.pins['in0'].value || this.pins['in1'].value
+    }
+}
+
+export class NandGate {
+    constructor(id) {
+        this.id = id
+        this.type = 'gate/nand'
+        this.pins = {
+            in0: { type: 'input', value: false },
+            in1: { type: 'input', value: false },
+            out: { type: 'output', value: true }
+        }
+    }
+
+    process() {
+        this.pins['out'].value = !(this.pins['in0'].value && this.pins['in1'].value)
+    }
+}
+
 export class DisplayProbe {
     constructor(id) {
         this.id = id
