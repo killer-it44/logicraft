@@ -5,7 +5,7 @@ import Circuit, { ToggleSource, DisplayProbe, Wire } from '../public/circuit.js'
 import { SimulationController } from '../public/simulation-controller.js'
 
 describe('simulation controller', () => {
-    it('still displays 0 after a tick when the source is not activated', () => {
+    it('still displays 0 after a tick when the source is not active', () => {
         const source = new ToggleSource('source', false)
         const probe = new DisplayProbe('probe')
         const circuit = new Circuit([source, probe], [new Wire('wire', source.pins.out, probe.pins.in)])
@@ -18,7 +18,7 @@ describe('simulation controller', () => {
         assert.equal(probe.getValue(), 0)
     })
 
-    it('displays 1 after a tick when the source is activated', () => {
+    it('displays 1 after a tick when the source is active', () => {
         const source = new ToggleSource('source', true)
         const probe = new DisplayProbe('probe')
         const circuit = new Circuit([source, probe], [new Wire('wire', source.pins.out, probe.pins.in)])

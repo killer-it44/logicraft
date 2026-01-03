@@ -8,7 +8,7 @@ export default class Circuit {
         const components = json.components.map((compJson) => {
             switch (compJson.type) {
                 case 'source/toggle':
-                    return new ToggleSource(compJson.id, compJson.activated)
+                    return new ToggleSource(compJson.id, compJson.active)
                 case 'gate/not':
                     return new NotGate(compJson.id)
                 case 'gate/and':
@@ -32,12 +32,12 @@ export default class Circuit {
 }
 
 export class ToggleSource {
-    constructor(id, activated) {
+    constructor(id, active) {
         this.id = id
         this.type = 'source/toggle'
-        this.activated = activated
+        this.active = active
         this.pins = {
-            out: { type: 'output', value: activated }
+            out: { type: 'output', value: active }
         }
     }
 
@@ -45,9 +45,9 @@ export class ToggleSource {
         // No-op for toggle source as it only changes state when toggled
     }
 
-    setActivated(activated) {
-        this.activated = activated
-        this.pins['out'].value = activated
+    setActive(active) {
+        this.active = active
+        this.pins['out'].value = active
     }
 }
 

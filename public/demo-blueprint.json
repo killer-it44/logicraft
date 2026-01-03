@@ -4,12 +4,12 @@
             {
                 "id": "toggle0",
                 "type": "source/toggle",
-                "activated": false
+                "active": false
             },
             {
                 "id": "toggle1",
                 "type": "source/toggle",
-                "activated": false
+                "active": false
             },
             {
                 "id": "not0",

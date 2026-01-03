@@ -71,7 +71,7 @@ describe('circuit components', () => {
         wire.propagateSignal()
         assert.equal(probe.pins.in.value, true)
 
-        source.setActivated(false)
+        source.setActive(false)
         wire.propagateSignal()
         assert.equal(probe.pins.in.value, false)
     })
@@ -79,7 +79,7 @@ describe('circuit components', () => {
     it('can be parsed from a json', () => {
         const json = {
             components: [
-                { id: 'source', type: 'source/toggle', activated: true },
+                { id: 'source', type: 'source/toggle', active: true },
                 { id: 'probe', type: 'probe/display' }
             ],
             wires: [
@@ -97,7 +97,7 @@ describe('circuit components', () => {
         const wire = circuit.wires[0]
 
         assert(source instanceof ToggleSource)
-        assert.equal(source.activated, true)
+        assert.equal(source.active, true)
         assert(probe instanceof DisplayProbe)
         assert.equal(wire.sourcePin, source.pins.out)
         assert.equal(wire.targetPin, probe.pins.in)
