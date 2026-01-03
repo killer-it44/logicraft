@@ -6,9 +6,12 @@ const NODE_HEIGHT = 64
 const NODE_RADIUS = 12
 
 // TODO normalize units to grid
-// TODO check if id handling through data-component-id is even needed / beneficial
+// TODO check if id handling through data-component-id is even needed / beneficial, we might not need the IDs at all
 // TODO kickout cardBackdrop and labelText
 // TODO simplify wirepath, no need to use segments, just use points and translate to svg path
+// TODO check mouse move and zoom and compare to Mural, make same
+// TODO make IDs in blueprint the key - work with maps instead of lists
+// TODO make the arguments/params in the blueprint an arg map so it can be passed generically into the constructors
 
 const labelText = (text, width, color = '#0f172a') => html`
     <text
@@ -136,7 +139,7 @@ export const XorGateNode = ({ id, label, position, active = false }) => {
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
             <g fill=${fillColor(active)} stroke=${lineColor(active)}>
                 <path d="M 0 0 L 20 0 A 10 10 0 0 1 20 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
-                <path d="M -5 2.5 A 6 10 0 0 1 -5 37.5" fill="none" />
+                <path d="M -5 3 A 6 10 0 0 1 -5 37" fill="none" />
                 <line x1="-10" y1="10" x2="3" y2="10" />
                 <line x1="-10" y1="30" x2="3" y2="30" />
                 <line x1="40" y1="20" x2="50" y2="20" />
@@ -151,7 +154,7 @@ export const XnorGateNode = ({ id, label, position, active = false }) => {
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
             <g fill=${fillColor(active)} stroke=${lineColor(active)}>
                 <path d="M 0 0 L 15 0 A 15 15 0 0 1 15 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
-                <path d="M -5 2.5 A 6 10 0 0 1 -5 37.5" fill="none" />
+                <path d="M -5 3 A 6 10 0 0 1 -5 37" fill="none" />
                 <line x1="-10" y1="10" x2="3" y2="10" />
                 <line x1="-10" y1="30" x2="3" y2="30" />
                 <circle cx="40" cy="20" r="5" />
