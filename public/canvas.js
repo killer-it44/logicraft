@@ -31,7 +31,7 @@ export function Canvas({ children, onPointerMove }) {
         const svgPoint = toSvgPoint(event.clientX, event.clientY)
         
         setViewBox((prev) => {
-            if (event.ctrlKey) {
+            if (event.ctrlKey || event.metaKey) {
                 // zoom
                 const scale = event.deltaY > 0 ? ZOOM_SPEED : 1 / ZOOM_SPEED
                 const actualScale = clamp(prev.width * scale, MIN_WIDTH, MAX_WIDTH) / prev.width
