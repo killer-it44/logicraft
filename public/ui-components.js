@@ -5,6 +5,11 @@ const NODE_WIDTH = 120
 const NODE_HEIGHT = 64
 const NODE_RADIUS = 12
 
+// TODO normalize units to grid
+// TODO check if id handling through data-component-id is even needed / beneficial
+// TODO kickout cardBackdrop and labelText
+// TODO simplify wirepath, no need to use segments, just use points and translate to svg path
+
 const labelText = (text, width, color = '#0f172a') => html`
     <text
         x=${width / 2}
@@ -36,28 +41,30 @@ export const ToggleNode = ({ id, label, position, active }) => {
     const knobX = (active ? trackW - trackR : trackR)
 
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} font-family=${FONT_FAMILY} font-size="16" font-weight="600" stroke-width="3">
-            <text y="-8" text-anchor="left">${label}</text>
-            <rect width=${trackW} height=${trackH} rx=${trackR} ry=${trackR} fill=${fillColor(active)} stroke=${lineColor(active)} />
-            <circle cx=${knobX} cy=${trackR} r=${knobR} fill="#f8fafc" stroke=${lineColor(active)} />
-            <text x=${knobX} y=${trackR + 2} font-size="12" text-anchor="middle" dominant-baseline="middle">${active ? '✓' : 'X'}</text>
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+                <rect width=${trackW} height=${trackH} rx=${trackR} ry=${trackR} />
+                <circle cx=${knobX} cy=${trackR} r=${knobR} fill="#f8fafc" />
+                <text x=${knobX} y=${trackR + 2} text-anchor="middle" dominant-baseline="middle" font-family=${FONT_FAMILY}>
+                    ${active ? '✔' : 'X'}
+                </text>
+            </g>
         </g>
     `
 }
 
-export const NotGateNode = ({ id, label = 'NOT', position, active = false }) => {
-    const stroke = lineColor(active)
-    const fill = fillColor(active)
+export const NotGateNode = ({ id, label, position, active }) => {
     const inputY = 20, startX = 0, tipX = 30, bubbleRadius = 5
     const bubbleCenterX = tipX + bubbleRadius
     const outputX = bubbleCenterX + bubbleRadius + 10
 
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} font-family=${FONT_FAMILY} font-size="16" font-weight="600" stroke-width="3">
-            <text y="-8" text-anchor="left">${label}</text>
-            <g fill=${fill} stroke=${stroke}>
-                <line x1="-10" y1=${inputY} x2=${startX} y2=${inputY} />
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
                 <path d=${`M${startX} 0 L${startX} 40 L${tipX} ${inputY} Z`} />
+                <line x1="-10" y1=${inputY} x2=${startX} y2=${inputY} />
                 <circle cx=${bubbleCenterX} cy=${inputY} r=${bubbleRadius} />
                 <line x1=${bubbleCenterX + bubbleRadius} y1=${inputY} x2=${outputX} y2=${inputY} />
             </g>
@@ -65,54 +72,91 @@ export const NotGateNode = ({ id, label = 'NOT', position, active = false }) => 
     `
 }
 
-export const AndGateNode = ({ id, label = 'AND', position }) => {
-    const accent = '#0f172a'
+export const AndGateNode = ({ id, label, position, active = false }) => {
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
-            ${cardBackdrop({ fill: '#e0f2fe', stroke: accent })}
-            <path
-                d="M24 16 H70 Q100 32 70 48 H24 Z"
-                fill="#0f172a"
-                opacity="0.15"
-                stroke="#0f172a"
-                stroke-width="3"
-            />
-            ${labelText(label, NODE_WIDTH, accent)}
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+                <path d="M 0 0 L 20 0 A 10 10 0 0 1 20 40 L 0 40 L 0 0 Z" />
+                <line x1="-10" y1="10" x2="0" y2="10" />
+                <line x1="-10" y1="30" x2="0" y2="30" />
+                <line x1="40" y1="20" x2="50" y2="20" />
+            </g>
         </g>
     `
 }
 
-export const OrGateNode = ({ id, label = 'OR', position }) => {
-    const accent = '#b45309'
+export const OrGateNode = ({ id, label, position, active = false }) => {
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
-            ${cardBackdrop({ fill: '#e0f2fe', stroke: accent })}
-            <path
-                d="M24 16 C44 16 60 24 78 32 C60 40 44 48 24 48 C34 48 70 48 94 32 C70 16 34 16 24 16 Z"
-                fill="#f97316"
-                opacity="0.18"
-                stroke="#b45309"
-                stroke-width="3"
-            />
-            ${labelText(label, NODE_WIDTH, accent)}
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+                <path d="M 0 0 L 20 0 A 10 10 0 0 1 20 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
+                <line x1="-10" y1="10" x2="10" y2="10" />
+                <line x1="-10" y1="30" x2="10" y2="30" />
+                <line x1="40" y1="20" x2="50" y2="20" />
+            </g>
         </g>
     `
 }
 
-export const NandGateNode = ({ id, label = 'NAND', position }) => {
-    const accent = '#2563eb'
+export const NandGateNode = ({ id, label, position, active = false }) => {
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
-            ${cardBackdrop({ fill: '#e0f2fe', stroke: accent })}
-            <path
-                d="M24 16 H70 Q100 32 70 48 H24 Z"
-                fill="#2563eb"
-                opacity="0.12"
-                stroke="#2563eb"
-                stroke-width="3"
-            />
-            <circle cx="98" cy="32" r="6" fill="#e0f2fe" stroke="#2563eb" stroke-width="3" />
-            ${labelText(label, NODE_WIDTH, accent)}
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+                <path d="M 0 0 L 15 0 A 15 15 0 0 1 15 40 L 0 40 L 0 0 Z" />
+                <line x1="-10" y1="10" x2="0" y2="10" />
+                <line x1="-10" y1="30" x2="0" y2="30" />
+                <circle cx="40" cy="20" r="5" />
+                <line x1="45" y1="20" x2="50" y2="20" />
+            </g>
+        </g>
+    `
+}
+
+export const NorGateNode = ({ id, label, position, active = false }) => {
+    return html`
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+                <path d="M 0 0 L 15 0 A 15 15 0 0 1 15 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
+                <line x1="-10" y1="10" x2="10" y2="10" />
+                <line x1="-10" y1="30" x2="10" y2="30" />
+                <circle cx="40" cy="20" r="5" />
+                <line x1="45" y1="20" x2="50" y2="20" />
+            </g>
+        </g>
+    `
+}
+
+export const XorGateNode = ({ id, label, position, active = false }) => {
+    return html`
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+                <path d="M 0 0 L 20 0 A 10 10 0 0 1 20 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
+                <path d="M -5 2.5 A 6 10 0 0 1 -5 37.5" fill="none" />
+                <line x1="-10" y1="10" x2="3" y2="10" />
+                <line x1="-10" y1="30" x2="3" y2="30" />
+                <line x1="40" y1="20" x2="50" y2="20" />
+            </g>
+        </g>
+    `
+}
+
+export const XnorGateNode = ({ id, label, position, active = false }) => {
+    return html`
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+                <path d="M 0 0 L 15 0 A 15 15 0 0 1 15 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
+                <path d="M -5 2.5 A 6 10 0 0 1 -5 37.5" fill="none" />
+                <line x1="-10" y1="10" x2="3" y2="10" />
+                <line x1="-10" y1="30" x2="3" y2="30" />
+                <circle cx="40" cy="20" r="5" />
+                <line x1="45" y1="20" x2="50" y2="20" />
+            </g>
         </g>
     `
 }
