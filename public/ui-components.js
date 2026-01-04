@@ -5,13 +5,9 @@ const NODE_WIDTH = 120
 const NODE_HEIGHT = 64
 const NODE_RADIUS = 12
 
-// TODO normalize units to grid
-// TODO check if id handling through data-component-id is even needed / beneficial, we might not need the IDs at all
-// TODO kickout cardBackdrop and labelText
-// TODO simplify wirepath, no need to use segments, just use points and translate to svg path
-// TODO check mouse move and zoom and compare to Mural, make same
-// TODO make IDs in blueprint the key - work with maps instead of lists
-// TODO make the arguments/params in the blueprint an arg map so it can be passed generically into the constructors
+// REVISE check if id handling through data-component-id is even needed / beneficial, we might not need the IDs at all
+// REVISE kickout cardBackdrop and labelText
+// REVISE simplify wirepath, no need to use segments, just use points and translate to svg path
 
 const labelText = (text, width, color = '#0f172a') => html`
     <text

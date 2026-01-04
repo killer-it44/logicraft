@@ -27,7 +27,7 @@ export function Canvas({ onPointerMove }) {
         fetch('/demo-blueprint.json').then(res => res.json()).then(data => setBlueprint(data))
     }, [])
 
-    // TODO use keys for updating of the state to avoid unnecessary re-renders
+    // REVISE use keys for updating of the state to avoid unnecessary re-renders
 
     const toSvgPoint = (x, y) => new DOMPoint(x, y).matrixTransform(svg.current.getScreenCTM().inverse())
 
