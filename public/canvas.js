@@ -19,8 +19,8 @@ const emptyBlueprint = { circuit: { components: [], wires: [] }, visualization: 
 
 export function Canvas({ onPointerMove }) {
     const svg = useRef()
-    const [viewBox, setViewBox] = useState(INITIAL_VIEWBOX)
     const selectedElement = useRef()
+    const [viewBox, setViewBox] = useState(INITIAL_VIEWBOX)
     const [blueprint, setBlueprint] = useState(emptyBlueprint)
 
     useEffect(() => {
@@ -29,44 +29,48 @@ export function Canvas({ onPointerMove }) {
 
     // TODO use keys for updating of the state to avoid unnecessary re-renders
 
-    const toSvgPoint = (x, y) => {
-        const pt = svg.current.createSVGPoint()
-        pt.x = x
-        pt.y = y
-        const ctm = svg.current.getScreenCTM()
-        if (!ctm) return null
-        return pt.matrixTransform(ctm.inverse())
-    }
+    const toSvgPoint = (x, y) => new DOMPoint(x, y).matrixTransform(svg.current.getScreenCTM().inverse())
 
     const move = (event) => {
         const point = toSvgPoint(event.clientX, event.clientY)
         onPointerMove(point)
-        if (!selectedElement.current) return
-
-        const startPoint = selectedElement.current.startPoint
-        const distance = Math.hypot(startPoint.x - point.x, startPoint.y - point.y)
-        if (distance <= 10) return
-
-        selectedElement.current.isDragging = true
-        const snapped = snapToGrid(point)
-        const comp = blueprint.visualization.components.find(c => c.id === selectedElement.current.componentId)
-        comp.position.x = snapped.x - selectedElement.current.offset.x
-        comp.position.y = snapped.y - selectedElement.current.offset.y
-        setBlueprint({ ...blueprint })
+       
+        if (selectedElement.current) {
+            // drag
+            const startPoint = selectedElement.current.startPoint
+            const distance = Math.hypot(startPoint.x - point.x, startPoint.y - point.y)
+            if (distance <= 10) return
+    
+            selectedElement.current.isDragging = true
+            const snapped = snapToGrid(point)
+            const comp = blueprint.visualization.components.find(c => c.id === selectedElement.current.componentId)
+            comp.position.x = snapped.x - selectedElement.current.offset.x
+            comp.position.y = snapped.y - selectedElement.current.offset.y
+            setBlueprint({ ...blueprint })
+        } else if (event.buttons & 2) {
+            // pan
+            const rect = svg.current.getBoundingClientRect()
+            setViewBox((prev) => {
+                const scaleX = prev.width / rect.width
+                const scaleY = prev.height / rect.height
+                return { ...prev, x: prev.x - event.movementX * scaleX, y: prev.y - event.movementY * scaleY }
+            })
+        }
     }
 
-    // TODO on event.button===1 we should pan
     const pointerDown = (event, comp) => {
         event.preventDefault()
-        if (event.button !== 0) return
-        const component = blueprint.visualization.components.find(c => c.id === comp.id)
-        const startPoint = toSvgPoint(event.clientX, event.clientY)
-        const offset = snapToGrid({ x: startPoint.x - component.position.x, y: startPoint.y - component.position.y })
-        selectedElement.current = { startPoint, offset, componentId: component.id }
+        if (event.button === 0 && comp) {
+            const startPoint = toSvgPoint(event.clientX, event.clientY)
+            const component = blueprint.visualization.components.find(c => c.id === comp.id)
+            const offset = snapToGrid({ x: startPoint.x - component.position.x, y: startPoint.y - component.position.y })
+            selectedElement.current = { startPoint, offset, componentId: component.id }
+        }
     }
 
     const pointerUp = () => {
         if (selectedElement.current && !selectedElement.current.isDragging) {
+            // click
             const comp = blueprint.circuit.components.find(c => c.id === selectedElement.current.componentId)
             if (comp.type === 'source/toggle') {
                 comp.active = !comp.active
@@ -77,11 +81,10 @@ export function Canvas({ onPointerMove }) {
     }
 
     const wheel = (event) => {
-        const svgPoint = toSvgPoint(event.clientX, event.clientY)
-
         setViewBox((prev) => {
             if (event.ctrlKey || event.metaKey) {
                 // zoom
+                const svgPoint = toSvgPoint(event.clientX, event.clientY)
                 const scale = event.deltaY > 0 ? ZOOM_SPEED : 1 / ZOOM_SPEED
                 const actualScale = clamp(prev.width * scale, MIN_WIDTH, MAX_WIDTH) / prev.width
                 const x = svgPoint.x - (svgPoint.x - prev.x) * actualScale
@@ -94,8 +97,6 @@ export function Canvas({ onPointerMove }) {
             }
         })
     }
-
-    const vb = `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
 
     const components = blueprint.circuit.components.map(comp => {
         const Component = {
@@ -122,11 +123,13 @@ export function Canvas({ onPointerMove }) {
             ref=${svg}
             width="100%"
             height="100%"
-            viewBox=${vb}
+            viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}"
+            onPointerDown=${pointerDown}
             onPointerMove=${move}
             onPointerUp=${pointerUp}
             onPointerCancel=${pointerUp}
             onWheel=${wheel}
+            onContextMenu=${(e) => e.preventDefault()}
         >
             <defs>
                 <pattern id="grid-pattern" width=${GRID_SPACING} height=${GRID_SPACING} patternUnits="userSpaceOnUse">
