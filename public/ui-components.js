@@ -49,7 +49,7 @@ export const ToggleNode = ({ id, label, position, active }) => {
             <g fill=${fillColor(active)} stroke=${lineColor(active)}>
                 <rect width=${trackW} height=${trackH} rx=${trackR} ry=${trackR} />
                 <circle cx=${knobX} cy=${trackR} r=${knobR} fill="#f8fafc" />
-                <text x=${knobX} y=${trackR + 2} text-anchor="middle" dominant-baseline="middle" font-family=${FONT_FAMILY}>
+                <text style="user-select: none;" x=${knobX} y=${trackR + 2} text-anchor="middle" dominant-baseline="middle" font-family=${FONT_FAMILY}>
                     ${active ? '✔' : 'X'}
                 </text>
             </g>
@@ -75,7 +75,7 @@ export const NotGateNode = ({ id, label, position, active }) => {
     `
 }
 
-export const AndGateNode = ({ id, label, position, active = false }) => {
+export const AndGateNode = ({ id, label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
@@ -89,7 +89,7 @@ export const AndGateNode = ({ id, label, position, active = false }) => {
     `
 }
 
-export const OrGateNode = ({ id, label, position, active = false }) => {
+export const OrGateNode = ({ id, label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
@@ -103,7 +103,7 @@ export const OrGateNode = ({ id, label, position, active = false }) => {
     `
 }
 
-export const NandGateNode = ({ id, label, position, active = false }) => {
+export const NandGateNode = ({ id, label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
@@ -118,7 +118,7 @@ export const NandGateNode = ({ id, label, position, active = false }) => {
     `
 }
 
-export const NorGateNode = ({ id, label, position, active = false }) => {
+export const NorGateNode = ({ id, label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
@@ -133,7 +133,7 @@ export const NorGateNode = ({ id, label, position, active = false }) => {
     `
 }
 
-export const XorGateNode = ({ id, label, position, active = false }) => {
+export const XorGateNode = ({ id, label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
@@ -148,7 +148,7 @@ export const XorGateNode = ({ id, label, position, active = false }) => {
     `
 }
 
-export const XnorGateNode = ({ id, label, position, active = false }) => {
+export const XnorGateNode = ({ id, label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="3">
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="600">${label}</text>
@@ -164,7 +164,7 @@ export const XnorGateNode = ({ id, label, position, active = false }) => {
     `
 }
 
-export const DisplayProbeNode = ({ id, label = 'Probe', position, value = 0 }) => {
+export const DisplayProbeNode = ({ id, label, position, value = 0 }) => {
     const bodyFill = value ? '#fde68a' : '#e5e7eb'
     const textColor = value ? '#92400e' : '#374151'
 
@@ -195,7 +195,7 @@ const segmentsToPolyline = (segments = []) => {
     return points.map((point) => `${point.x},${point.y}`).join(' ')
 }
 
-export const WirePath = ({ id, segments, active = false }) => {
+export const WirePath = ({ id, segments, active }) => {
     const strokeColor = active ? '#f97316' : '#94a3b8'
     return html`
         <polyline
