@@ -52,7 +52,7 @@
             {
                 "id": "toggle0",
                 "label": "Input A",
-                "position": { "x": 110, "y": 120 }
+                "position": { "x": 100, "y": 120 }
             },
             {
                 "id": "display0",
@@ -62,7 +62,7 @@
             {
                 "id": "toggle1",
                 "label": "Input B",
-                "position": { "x": 110, "y": 260 }
+                "position": { "x": 100, "y": 260 }
             },
             {
                 "id": "not0",
