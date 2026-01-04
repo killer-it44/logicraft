@@ -21,10 +21,10 @@ export default class Circuit {
         })
 
         const wires = json.wires.map((wireJson) => {
-            const [sourceCompId, sourcePinName] = wireJson.source.split('/')
-            const sourcePin = components.find(c => c.id === sourceCompId).pins[sourcePinName]
-            const [targetCompId, targetPinName] = wireJson.target.split('/')
-            const targetPin = components.find(c => c.id === targetCompId).pins[targetPinName]
+            const [sourceCompId, sourcePinId] = wireJson.source.split('/')
+            const sourcePin = components.find(c => c.id === sourceCompId).pins[sourcePinId]
+            const [targetCompId, targetPinId] = wireJson.target.split('/')
+            const targetPin = components.find(c => c.id === targetCompId).pins[targetPinId]
             return new Wire(wireJson.id, sourcePin, targetPin)
         })
         return new Circuit(components, wires)
