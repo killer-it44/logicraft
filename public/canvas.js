@@ -1,7 +1,7 @@
 import { html, useRef, useState, useEffect } from 'preact-standalone'
 import { ToggleNode, NotGateNode, AndGateNode, OrGateNode, NandGateNode, NorGateNode, XorGateNode, XnorGateNode, DisplayProbeNode } from './ui-components.js'
 
-const GRID_SPACING = 20
+const GRID_SPACING = 10
 const INITIAL_VIEWBOX = { x: 0, y: 0, width: 800, height: 480 }
 const ZOOM_SPEED = 1.07
 const MIN_WIDTH = INITIAL_VIEWBOX.width / 10
@@ -17,6 +17,7 @@ const snapToGrid = ({ x, y }) => ({
 // REVISE very likely it will be better if we don't separate wires and components in the blueprint into different object categories
 const emptyBlueprint = { circuit: { components: [], wires: [] }, visualization: { components: [], wires: [] } }
 
+// REVISE use keys for updating of the state to avoid unnecessary re-renders
 export function Canvas({ onPointerMove }) {
     const svg = useRef()
     const selectedElement = useRef()
@@ -26,8 +27,6 @@ export function Canvas({ onPointerMove }) {
     useEffect(() => {
         fetch('/demo-blueprint.json').then(res => res.json()).then(data => setBlueprint(data))
     }, [])
-
-    // REVISE use keys for updating of the state to avoid unnecessary re-renders
 
     const toSvgPoint = (x, y) => new DOMPoint(x, y).matrixTransform(svg.current.getScreenCTM().inverse())
 
