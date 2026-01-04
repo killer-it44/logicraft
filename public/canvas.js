@@ -14,30 +14,20 @@ const snapToGrid = ({ x, y }) => ({
     y: Math.round(y / GRID_SPACING) * GRID_SPACING
 })
 
-// REVISE return the object directly
-const componentRenderers = {
-    'source/toggle': ToggleNode,
-    'gate/not': NotGateNode,
-    'gate/and': AndGateNode,
-    'gate/or': OrGateNode,
-    'gate/nand': NandGateNode,
-    'gate/nor': NorGateNode,
-    'gate/xor': XorGateNode,
-    'gate/xnor': XnorGateNode,
-    'probe/display': DisplayProbeNode
-}
-
+// REVISE very likely it will be better if we don't separate wires and components in the blueprint into different object categories
 const emptyBlueprint = { circuit: { components: [], wires: [] }, visualization: { components: [], wires: [] } }
 
 export function Canvas({ onPointerMove }) {
-    const svg = useRef(null)
+    const svg = useRef()
     const [viewBox, setViewBox] = useState(INITIAL_VIEWBOX)
-    const [dragInfo, setDragInfo] = useState(null)
+    const selectedElement = useRef()
     const [blueprint, setBlueprint] = useState(emptyBlueprint)
 
     useEffect(() => {
         fetch('/demo-blueprint.json').then(res => res.json()).then(data => setBlueprint(data))
     }, [])
+
+    // TODO use keys for updating of the state to avoid unnecessary re-renders
 
     const toSvgPoint = (x, y) => {
         const pt = svg.current.createSVGPoint()
@@ -49,42 +39,44 @@ export function Canvas({ onPointerMove }) {
     }
 
     const move = (event) => {
-        const svgPoint = toSvgPoint(event.clientX, event.clientY)
-        onPointerMove(svgPoint)
-        if (!dragInfo) return
+        const point = toSvgPoint(event.clientX, event.clientY)
+        onPointerMove(point)
+        if (!selectedElement.current) return
 
-        const snapped = snapToGrid(svgPoint)
-        dragInfo.component.position.x = snapped.x - dragInfo.offsetX
-        dragInfo.component.position.y = snapped.y - dragInfo.offsetY
-        // REVISE maybe this can be made prettier, it's not obvious how the dragInfo relates to the blueprint
-        //          it is needed as otherwise Preact won't re-render (we're currently just "lucky" to get a re-render from the onPointerMove)
+        const startPoint = selectedElement.current.startPoint
+        const distance = Math.hypot(startPoint.x - point.x, startPoint.y - point.y)
+        if (distance <= 10) return
+
+        selectedElement.current.isDragging = true
+        const snapped = snapToGrid(point)
+        const comp = blueprint.visualization.components.find(c => c.id === selectedElement.current.componentId)
+        comp.position.x = snapped.x - selectedElement.current.offset.x
+        comp.position.y = snapped.y - selectedElement.current.offset.y
         setBlueprint({ ...blueprint })
     }
 
-    // REVISE check if the pointerId / pointerCapture is really needed, and why
-    const startDrag = (event, comp) => {
-        if (event.button !== 0) return
+    // TODO on event.button===1 we should pan
+    const pointerDown = (event, comp) => {
         event.preventDefault()
-        const svgPoint = snapToGrid(toSvgPoint(event.clientX, event.clientY))
+        if (event.button !== 0) return
         const component = blueprint.visualization.components.find(c => c.id === comp.id)
-        setDragInfo({
-            pointerId: event.pointerId,
-            // REVISE very likely it will be better if we don't separate wires and components in the blueprint into different object categories
-            offsetX: svgPoint.x - component.position.x,
-            offsetY: svgPoint.y - component.position.y,
-            component
-        })
-        svg.current.setPointerCapture(event.pointerId)
+        const startPoint = toSvgPoint(event.clientX, event.clientY)
+        const offset = snapToGrid({ x: startPoint.x - component.position.x, y: startPoint.y - component.position.y })
+        selectedElement.current = { startPoint, offset, componentId: component.id }
     }
 
-    const endDrag = (event) => {
-        if (!dragInfo || dragInfo.pointerId !== event.pointerId) return
-        svg.current.releasePointerCapture(event.pointerId)
-        setDragInfo(null)
+    const pointerUp = () => {
+        if (selectedElement.current && !selectedElement.current.isDragging) {
+            const comp = blueprint.circuit.components.find(c => c.id === selectedElement.current.componentId)
+            if (comp.type === 'source/toggle') {
+                comp.active = !comp.active
+                setBlueprint({ ...blueprint })
+            }
+        }
+        selectedElement.current = undefined
     }
 
     const wheel = (event) => {
-        event.preventDefault()
         const svgPoint = toSvgPoint(event.clientX, event.clientY)
 
         setViewBox((prev) => {
@@ -106,11 +98,21 @@ export function Canvas({ onPointerMove }) {
     const vb = `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
 
     const components = blueprint.circuit.components.map(comp => {
-        const Renderer = componentRenderers[comp.type]
+        const Component = {
+            'source/toggle': ToggleNode,
+            'gate/not': NotGateNode,
+            'gate/and': AndGateNode,
+            'gate/or': OrGateNode,
+            'gate/nand': NandGateNode,
+            'gate/nor': NorGateNode,
+            'gate/xor': XorGateNode,
+            'gate/xnor': XnorGateNode,
+            'probe/display': DisplayProbeNode
+        }[comp.type]
         const position = blueprint.visualization.components.find(c => c.id === comp.id).position
         return html`
-            <g onPointerDown=${(event) => startDrag(event, comp)}>
-                <${Renderer} id=${comp.id} label=${comp.label} position=${position} active=${comp.active} />
+            <g key=${comp.id} onPointerDown=${(event) => pointerDown(event, comp)}>
+                <${Component} id=${comp.id} label=${comp.label} position=${position} active=${comp.active} />
             </g>
         `
     })
@@ -122,8 +124,8 @@ export function Canvas({ onPointerMove }) {
             height="100%"
             viewBox=${vb}
             onPointerMove=${move}
-            onPointerUp=${endDrag}
-            onPointerCancel=${endDrag}
+            onPointerUp=${pointerUp}
+            onPointerCancel=${pointerUp}
             onWheel=${wheel}
         >
             <defs>
