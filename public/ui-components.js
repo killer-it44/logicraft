@@ -1,21 +1,18 @@
 import { html } from 'preact-standalone'
 
 const FONT_FAMILY = 'Space Grotesk, sans-serif'
-
-// REVISE check if id handling through data-component-id is even needed / beneficial, we might not need the IDs at all
-// REVISE simplify wirepath, no need to use segments, just use points and translate to svg path
-
 const fillColor = (active) => active ? '#22c55e' : '#f87171'
 const lineColor = (active) => active ? '#047857' : '#b91c1c'
 
+// REVISE check if id handling through data-component-id is even needed / beneficial, we might not need the IDs at all
 export const ToggleNode = ({ id, label, position, active }) => {
     const trackW = 40, trackH = 20, trackR = trackH / 2, knobR = trackR - 2.5
     const knobX = (active ? trackW - trackR : trackR)
 
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="2">
-            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="400">${label}</text>
-            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
                 <rect width=${trackW} height=${trackH} rx=${trackR} ry=${trackR} />
                 <line x1="40" y1="10" x2="50" y2="10" />
                 <circle cx=${knobX} cy=${trackR} r=${knobR} fill="#f8fafc" />
@@ -33,9 +30,9 @@ export const NotGateNode = ({ id, label, position, active }) => {
     const outputX = bubbleCenterX + bubbleRadius + 10
 
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="2">
-            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="400">${label}</text>
-            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
                 <path d=${`M${startX} 0 L${startX} ${height} L${tipX} ${inputY} Z`} />
                 <line x1="-10" y1=${inputY} x2=${startX} y2=${inputY} />
                 <circle cx=${bubbleCenterX} cy=${inputY} r=${bubbleRadius} />
@@ -47,9 +44,9 @@ export const NotGateNode = ({ id, label, position, active }) => {
 
 export const AndGateNode = ({ id, label, position, active }) => {
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="2">
-            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="400">${label}</text>
-            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
                 <path d="M 0 0 L 20 0 A 10 10 0 0 1 20 40 L 0 40 L 0 0 Z" />
                 <line x1="-10" y1="10" x2="0" y2="10" />
                 <line x1="-10" y1="30" x2="0" y2="30" />
@@ -62,7 +59,7 @@ export const AndGateNode = ({ id, label, position, active }) => {
 export const OrGateNode = ({ id, label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="2">
-            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="400">${label}</text>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
             <g fill=${fillColor(active)} stroke=${lineColor(active)}>
                 <path d="M 0 0 L 20 0 A 10 10 0 0 1 20 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
                 <line x1="-10" y1="10" x2="10" y2="10" />
@@ -75,9 +72,9 @@ export const OrGateNode = ({ id, label, position, active }) => {
 
 export const NandGateNode = ({ id, label, position, active }) => {
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="2">
-            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="400">${label}</text>
-            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
                 <path d="M 0 0 L 15 0 A 15 15 0 0 1 15 40 L 0 40 L 0 0 Z" />
                 <line x1="-10" y1="10" x2="0" y2="10" />
                 <line x1="-10" y1="30" x2="0" y2="30" />
@@ -90,9 +87,9 @@ export const NandGateNode = ({ id, label, position, active }) => {
 
 export const NorGateNode = ({ id, label, position, active }) => {
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="2">
-            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="400">${label}</text>
-            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
                 <path d="M 0 0 L 15 0 A 15 15 0 0 1 15 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
                 <line x1="-10" y1="10" x2="10" y2="10" />
                 <line x1="-10" y1="30" x2="10" y2="30" />
@@ -105,9 +102,9 @@ export const NorGateNode = ({ id, label, position, active }) => {
 
 export const XorGateNode = ({ id, label, position, active }) => {
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="2">
-            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="400">${label}</text>
-            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
                 <path d="M 0 0 L 20 0 A 10 10 0 0 1 20 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
                 <path d="M -5 3 A 6 10 0 0 1 -5 37" fill="none" />
                 <line x1="-10" y1="10" x2="3" y2="10" />
@@ -120,9 +117,9 @@ export const XorGateNode = ({ id, label, position, active }) => {
 
 export const XnorGateNode = ({ id, label, position, active }) => {
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="2">
-            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="400">${label}</text>
-            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
                 <path d="M 0 0 L 15 0 A 15 15 0 0 1 15 40 L 0 40 A 6 10 0 0 0 0 0 Z" />
                 <path d="M -5 3 A 6 10 0 0 1 -5 37" fill="none" />
                 <line x1="-10" y1="10" x2="3" y2="10" />
@@ -138,9 +135,9 @@ export const DisplayProbeNode = ({ id, label, position, active }) => {
     const width = 20, height = 20, borderRadius = height / 4
 
     return html`
-        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id} stroke-width="2">
-            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="16" font-weight="400">${label}</text>
-            <g fill=${fillColor(active)} stroke=${lineColor(active)}>
+        <g transform=${`translate(${position.x} ${position.y})`} data-component-id=${id}>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
                 <rect width=${width} height=${height} rx=${borderRadius} ry=${borderRadius} />
                 <line x1="-10" y1=${height / 2} x2="0" y2=${height / 2} />
                 <text style="user-select: none;" x=${width / 2} y=${height / 2} text-anchor="middle" dominant-baseline="middle" font-family=${FONT_FAMILY} font-size="14" stroke-width="2">
@@ -151,27 +148,17 @@ export const DisplayProbeNode = ({ id, label, position, active }) => {
     `
 }
 
-const segmentsToPolyline = (segments = []) => {
-    if (!segments.length) return ''
-    const points = [segments[0].from]
-    segments.forEach((segment) => {
-        points.push(segment.to)
-    })
-    return points.map((point) => `${point.x},${point.y}`).join(' ')
-}
+export const WirePath = ({ id, from, to, active }) => {
+    const points = [from, to].map((p) => `${p.x},${p.y}`).join(' ')
 
-export const WirePath = ({ id, segments, active }) => {
-    const strokeColor = active ? '#f97316' : '#94a3b8'
     return html`
-        <polyline
-            points=${segmentsToPolyline(segments)}
-            fill="none"
-            stroke=${strokeColor}
-            stroke-width=${active ? 4 : 3}
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            opacity=${active ? 0.95 : 0.7}
-            data-wire-id=${id}
-        />
+        <g data-wire-id=${id}>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
+                <polyline points=${points} fill="none" stroke="white" opacity="0" stroke-width="10"/>
+                <polyline points=${points} fill="none" stroke-width=${active ? 3 : 2} />
+                <circle cx=${from.x} cy=${from.y} r="2.5" />
+                <circle cx=${to.x} cy=${to.y} r="2.5" />
+            </g>
+        </g>
     `
 }

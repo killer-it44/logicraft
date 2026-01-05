@@ -1,5 +1,5 @@
 import { html, useRef, useState, useEffect } from 'preact-standalone'
-import { ToggleNode, NotGateNode, AndGateNode, OrGateNode, NandGateNode, NorGateNode, XorGateNode, XnorGateNode, DisplayProbeNode } from './ui-components.js'
+import { ToggleNode, NotGateNode, AndGateNode, OrGateNode, NandGateNode, NorGateNode, XorGateNode, XnorGateNode, DisplayProbeNode, WirePath } from './ui-components.js'
 
 const GRID_SPACING = 10
 const INITIAL_VIEWBOX = { x: 0, y: 0, width: 800, height: 480 }
@@ -33,21 +33,36 @@ export function Canvas({ onPointerMove }) {
     const move = (event) => {
         const point = toSvgPoint(event.clientX, event.clientY)
         onPointerMove(point)
-       
+
         if (selectedElement.current) {
             // drag
             const startPoint = selectedElement.current.startPoint
             const distance = Math.hypot(startPoint.x - point.x, startPoint.y - point.y)
             if (distance <= 10) return
-    
+
+            // FIXME when dragging out of the window, we should scroll the viewbox accordingly
             selectedElement.current.isDragging = true
-            const snapped = snapToGrid(point)
+            const delta = { x: point.x - startPoint.x, y: point.y - startPoint.y }
+
             const comp = blueprint.visualization.components.find(c => c.id === selectedElement.current.componentId)
-            comp.position.x = snapped.x - selectedElement.current.offset.x
-            comp.position.y = snapped.y - selectedElement.current.offset.y
+            if (comp) {
+                // node
+                comp.position = snapToGrid({ x: comp.position.x + delta.x, y: comp.position.y + delta.y })
+            } else {
+                // wire
+                const wire = blueprint.visualization.wires.find(c => c.id === selectedElement.current.componentId)
+                if (selectedElement.current.isDraggingFrom || !selectedElement.current.isDraggingTo) {
+                    wire.from = snapToGrid({ x: wire.from.x + delta.x, y: wire.from.y + delta.y })
+                }
+                if (selectedElement.current.isDraggingTo || !selectedElement.current.isDraggingFrom) {
+                    wire.to = snapToGrid({ x: wire.to.x + delta.x, y: wire.to.y + delta.y })
+                }
+            }
+            selectedElement.current.startPoint = snapToGrid(point)
             setBlueprint({ ...blueprint })
         } else if (event.buttons & 2) {
             // pan
+            // FIXME positioning on move is bit off when our window has a different aspect ratio than the viewbox, the cursor alwyas moves faster than the element in the direction of the larger dimension
             const rect = svg.current.getBoundingClientRect()
             setViewBox((prev) => {
                 const scaleX = prev.width / rect.width
@@ -59,19 +74,31 @@ export function Canvas({ onPointerMove }) {
 
     const pointerDown = (event, comp) => {
         event.preventDefault()
+        // REVISE not good how we hassle around with wires vs. components, naming is also quite confusing: for ui-components we say "nodes" and "wires", but for model we say "components" and "wires" 
         if (event.button === 0 && comp) {
-            const startPoint = toSvgPoint(event.clientX, event.clientY)
-            const component = blueprint.visualization.components.find(c => c.id === comp.id)
-            const offset = snapToGrid({ x: startPoint.x - component.position.x, y: startPoint.y - component.position.y })
-            selectedElement.current = { startPoint, offset, componentId: component.id }
+            if (comp.type) {
+                // node
+                const startPoint = toSvgPoint(event.clientX, event.clientY)
+                const component = blueprint.visualization.components.find(c => c.id === comp.id)
+                const offset = snapToGrid({ x: startPoint.x - component.position.x, y: startPoint.y - component.position.y })
+                selectedElement.current = { startPoint, offset, componentId: component.id }
+            }
+            else {
+                // wire
+                const startPoint = toSvgPoint(event.clientX, event.clientY)
+                const wire = blueprint.visualization.wires.find(c => c.id === comp.id)
+                const isDraggingFrom = Math.hypot(startPoint.x - wire.from.x, startPoint.y - wire.from.y) < 10
+                const isDraggingTo = Math.hypot(startPoint.x - wire.to.x, startPoint.y - wire.to.y) < 10
+                selectedElement.current = { startPoint, componentId: wire.id, isDraggingFrom, isDraggingTo }
+            }
         }
     }
 
     const pointerUp = () => {
         if (selectedElement.current && !selectedElement.current.isDragging) {
-            // click
+            // click (only for components of type toggle source)
             const comp = blueprint.circuit.components.find(c => c.id === selectedElement.current.componentId)
-            if (comp.type === 'source/toggle') {
+            if (comp && comp.type === 'source/toggle') {
                 comp.active = !comp.active
                 setBlueprint({ ...blueprint })
             }
@@ -109,10 +136,19 @@ export function Canvas({ onPointerMove }) {
             'gate/xnor': XnorGateNode,
             'probe/display': DisplayProbeNode
         }[comp.type]
-        const position = blueprint.visualization.components.find(c => c.id === comp.id).position
+        const compVis = blueprint.visualization.components.find(c => c.id === comp.id)
         return html`
             <g key=${comp.id} onPointerDown=${(event) => pointerDown(event, comp)}>
-                <${Component} id=${comp.id} label=${comp.label} position=${position} active=${comp.active} />
+                <${Component} id=${comp.id} label=${compVis.label} position=${compVis.position} active=${comp.active} />
+            </g>
+        `
+    })
+
+    const wires = blueprint.circuit.wires.map(wire => {
+        const wireVis = blueprint.visualization.wires.find(w => w.id === wire.id)
+        return html`
+            <g key=${wire.id} onPointerDown=${(event) => pointerDown(event, wire)}>
+                <${WirePath} from=${wireVis.from} to=${wireVis.to} />
             </g>
         `
     })
@@ -138,6 +174,7 @@ export function Canvas({ onPointerMove }) {
             <rect x=${-MAX_WIDTH} y=${-MAX_WIDTH} width=${MAX_WIDTH * 2} height=${MAX_WIDTH * 2} fill="url(#grid-pattern)" />
 
             ${components}
+            ${wires}
         </svg>
     `
 }
