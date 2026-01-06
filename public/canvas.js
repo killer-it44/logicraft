@@ -28,8 +28,6 @@ const Components = {
     'probe/display': DisplayProbeNode
 }
 
-// FIXME dragging snapped wires and components should unsnap
-
 export function Canvas({ onPointerMove }) {
     const svg = useRef()
     const selection = useRef()
@@ -43,23 +41,28 @@ export function Canvas({ onPointerMove }) {
         return () => svg.current.removeEventListener('wheel', wheel)
     }, [])
 
-    // TODO right now our wires have a direction from source to target, but for snapping it would be better if we can drag either endpoint to either input or output pins, but of course respecting the directionality, i.e. cannot connect both endpoints to outputs or both endpoints to inputs
+    // FIXME dragging components should unsnap, or drag the connected point of the wire along
+    // TODO right now our wires have a direction from source to target, but for snapping it would be better if
+    //          - either we can drag either endpoint to either input or output pins, but of course respecting the directionality, i.e. cannot connect both endpoints to outputs or both endpoints to inputs
+    //          - or we visualize the input vs. output pins differently to make it clear for the user which endpoint can connect to which pin
+    // TODO should not be able to connect to input pins that are already connected
     const findPinInRange = (point, pinType) => {
-        let [id, position, closestDistance] = [null, null, Infinity]
+        let [pin, position, closestDistance] = [null, null, Infinity]        
         for (const [componentId, pins] of pinRegistry.current.entries()) {
-            for (const pin of pins.filter(p => circuit.getPin(componentId, p.id).type === pinType)) {
-                const distance = Math.hypot(pin.x - point.x, pin.y - point.y)
+            const matchingPins = pins.filter(p => circuit.getPin(componentId, p.id).type === pinType)
+            for (const p of matchingPins) {
+                const distance = Math.hypot(p.x - point.x, p.y - point.y)
                 if (distance < closestDistance) {
-                    [id, position, closestDistance] = [`${componentId}/${pin.id}`, { x: pin.x, y: pin.y }, distance]
+                    [pin, position, closestDistance] = [circuit.getPin(componentId, p.id), { x: p.x, y: p.y }, distance]
                 }
             }
         }
-        return id && closestDistance <= SNAP_DISTANCE ? { id, position } : { id: undefined, position: point }
+        return closestDistance <= SNAP_DISTANCE ? { pin, position } : { pin: undefined, position: point }
     }
 
     const snapWireEndpoint = (point, wire, endpointKey) => {
         const pinInRange = findPinInRange(point, endpointKey === 'source' ? 'output' : 'input')
-        wire[endpointKey] = pinInRange.id
+        wire[endpointKey === 'source' ? 'sourcePin' : 'targetPin'] = pinInRange.pin
         return snapToGrid(pinInRange.position)
     }
 
@@ -96,11 +99,11 @@ export function Canvas({ onPointerMove }) {
             if (!selection.current.isDragging && Math.hypot(startPoint.x - point.x, startPoint.y - point.y) <= 10) return
 
             selection.current.isDragging = true
-            
+
             if (selection.current.element.type) {
                 // component
                 const comp = selection.current.element
-                comp.position = snapToGrid({x: point.x - selection.current.offset.x, y: point.y - selection.current.offset.y})
+                comp.position = snapToGrid({ x: point.x - selection.current.offset.x, y: point.y - selection.current.offset.y })
             } else {
                 // wire
                 const wire = selection.current.element
@@ -108,7 +111,7 @@ export function Canvas({ onPointerMove }) {
                     wire.from = snapWireEndpoint({ x: point.x - selection.current.offsetFrom.x, y: point.y - selection.current.offsetFrom.y }, wire, 'source')
                 }
                 if (selection.current.isDraggingTo || !selection.current.isDraggingFrom) {
-                    wire.to = snapWireEndpoint({ x: point.x - selection.current.offsetTo.x, y: point.y - selection.current.offsetTo.y }, wire, 'source')
+                    wire.to = snapWireEndpoint({ x: point.x - selection.current.offsetTo.x, y: point.y - selection.current.offsetTo.y }, wire, 'target')
                 }
             }
             setCircuit(new Circuit({ components: circuit.components, wires: circuit.wires }))
@@ -170,7 +173,7 @@ export function Canvas({ onPointerMove }) {
 
             ${circuit.wires.map(wire => html`
             <g key=${wire.id} onPointerDown=${(event) => pointerDown(event, wire)}>
-                <${WirePath} from=${wire.from} to=${wire.to} />
+                <${WirePath} from=${wire.from} sourcePin=${wire.sourcePin} to=${wire.to} targetPin=${wire.targetPin} />
             </g>
             `)}
         </svg>

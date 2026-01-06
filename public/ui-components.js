@@ -221,15 +221,15 @@ export const DisplayProbeNode = ({ id, label, position, active, pinRegistry }) =
     `
 }
 
-export const WirePath = ({ from, to, active }) => {
+export const WirePath = ({ from, sourcePin, to, targetPin, active }) => {
     const points = [from, to].map((p) => `${p.x},${p.y}`).join(' ')
-
+    
     return html`
-        <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
+        <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="0">
             <polyline points=${points} fill="none" stroke="white" opacity="0" stroke-width="10"/>
             <polyline points=${points} fill="none" stroke-width=${active ? 3 : 2} />
-            <circle cx=${from.x} cy=${from.y} r="2.5" />
-            <circle cx=${to.x} cy=${to.y} r="2.5" />
+            <circle fill=${!sourcePin ? 'black' : lineColor(active)} cx=${from.x} cy=${from.y} r="2.5" />
+            <circle fill=${!targetPin ? 'black' : lineColor(active)} cx=${to.x} cy=${to.y} r="2.5" />
         </g>
     `
 }
