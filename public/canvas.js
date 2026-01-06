@@ -41,11 +41,11 @@ export function Canvas({ onPointerMove }) {
         return () => svg.current.removeEventListener('wheel', wheel)
     }, [])
 
-    // FIXME dragging components should unsnap, or drag the connected point of the wire along
-    // TODO right now our wires have a direction from source to target, but for snapping it would be better if
+    // FIXME right now our wires have a direction from source to target, but for snapping it would be better if
     //          - either we can drag either endpoint to either input or output pins, but of course respecting the directionality, i.e. cannot connect both endpoints to outputs or both endpoints to inputs
     //          - or we visualize the input vs. output pins differently to make it clear for the user which endpoint can connect to which pin
-    // TODO should not be able to connect to input pins that are already connected
+    // FIXME should not be able to connect to input pins that are already connected
+    // REVISE move to model layer and add tests
     const findPinInRange = (point, pinType) => {
         let [pin, position, closestDistance] = [null, null, Infinity]        
         for (const [componentId, pins] of pinRegistry.current.entries()) {
@@ -75,7 +75,8 @@ export function Canvas({ onPointerMove }) {
                 // node
                 const startPoint = toSvgPoint(event.clientX, event.clientY)
                 const offset = { x: startPoint.x - element.position.x, y: startPoint.y - element.position.y }
-                selection.current = { startPoint, offset, element }
+                const connectedWireHeads = circuit.findConnectedWireHeads(element)
+                selection.current = { startPoint, offset, element, connectedWireHeads }
             }
             else {
                 // wire
@@ -104,6 +105,11 @@ export function Canvas({ onPointerMove }) {
                 // component
                 const comp = selection.current.element
                 comp.position = snapToGrid({ x: point.x - selection.current.offset.x, y: point.y - selection.current.offset.y })
+                selection.current.connectedWireHeads.forEach(({ wireHead, pinId }) => {
+                    const pinPosition = pinRegistry.current.get(comp.id).find(pin => pin.id === pinId)
+                    wireHead.x = pinPosition.x
+                    wireHead.y = pinPosition.y
+                })
             } else {
                 // wire
                 const wire = selection.current.element

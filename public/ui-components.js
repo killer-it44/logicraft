@@ -4,6 +4,8 @@ const FONT_FAMILY = 'Space Grotesk, sans-serif'
 const fillColor = (active) => active ? '#22c55e' : '#f87171'
 const lineColor = (active) => active ? '#047857' : '#b91c1c'
 
+// REVISE if we send relative positions for pins, we don't need to update the registry on every drag
+
 const useRegisterPins = (id, pinRegistry, pins) => {
     useLayoutEffect(() => {
         pinRegistry.set(id, pins)
@@ -37,7 +39,7 @@ export const ToggleNode = ({ id, label, position, active, pinRegistry }) => {
 }
 
 export const NotGateNode = ({ id, label, position, active, pinRegistry }) => {
-    const inputY = 10, startX = 0, height = 20, tipX = 15, bubbleRadius = 5
+    const inputY = 10, startX = 0, height = 20, tipX = 20, bubbleRadius = 5
     const bubbleCenterX = tipX + bubbleRadius
     const outputX = bubbleCenterX + bubbleRadius + 10
 

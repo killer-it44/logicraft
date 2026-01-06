@@ -8,6 +8,16 @@ export default class Circuit {
         return this.components.find(c => c.id === componentId).pins[pinId]
     }
 
+    findConnectedWireHeads(component) {
+        const result = []
+        Object.keys(component.pins).forEach(pinId => {
+            const pin = component.pins[pinId]
+            result.push(...this.wires.filter(w => (w.sourcePin === pin)).map(wire => ({ wireHead: wire.from, pinId })))
+            result.push(...this.wires.filter(w => (w.targetPin === pin)).map(wire => ({ wireHead: wire.to, pinId })))
+        })
+        return result
+    }
+
     static fromJSON(json) {
         const components = json.components.map((compJson) => {
             const baseConfig = { id: compJson.id, label: compJson.label, position: structuredClone(compJson.position) }
