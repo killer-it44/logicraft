@@ -6,9 +6,12 @@ import { SimulationController } from '../public/simulation-controller.js'
 
 describe('simulation controller', () => {
     it('still displays 0 after a tick when the source is not active', () => {
-        const source = new ToggleSource('source', false)
-        const probe = new DisplayProbe('probe')
-        const circuit = new Circuit([source, probe], [new Wire('wire', source.pins.out, probe.pins.in)])
+        const source = new ToggleSource({ id: 'source', active: false })
+        const probe = new DisplayProbe({ id: 'probe' })
+        const circuit = new Circuit({ 
+            components: [source, probe], 
+            wires: [new Wire({ id: 'wire', sourcePin: source.pins.out, targetPin: probe.pins.in })] 
+        })
         const controller = new SimulationController(circuit)
 
         controller.tick()
@@ -19,9 +22,12 @@ describe('simulation controller', () => {
     })
 
     it('displays 1 after a tick when the source is active', () => {
-        const source = new ToggleSource('source', true)
-        const probe = new DisplayProbe('probe')
-        const circuit = new Circuit([source, probe], [new Wire('wire', source.pins.out, probe.pins.in)])
+        const source = new ToggleSource({ id: 'source', active: true })
+        const probe = new DisplayProbe({ id: 'probe' })
+        const circuit = new Circuit({ 
+            components: [source, probe], 
+            wires: [new Wire({ id: 'wire', sourcePin: source.pins.out, targetPin: probe.pins.in })] 
+        })
         const controller = new SimulationController(circuit)
 
         assert.equal(probe.pins.in.value, false)
@@ -33,12 +39,12 @@ describe('simulation controller', () => {
     })
 
     it('propagates the signal further only after another tick', () => {
-        const source = new ToggleSource('source', true)
-        const probe0 = new DisplayProbe('probe0')
-        const probe1 = new DisplayProbe('probe1')
-        const sourceToProbe0 = new Wire('wire0', source.pins.out, probe0.pins.in)
-        const probe0ToProbe1 = new Wire('wire1', probe0.pins.out, probe1.pins.in)
-        const circuit = new Circuit([source, probe0, probe1], [sourceToProbe0, probe0ToProbe1])
+        const source = new ToggleSource({ id: 'source', active: true })
+        const probe0 = new DisplayProbe({ id: 'probe0' })
+        const probe1 = new DisplayProbe({ id: 'probe1' })
+        const sourceToProbe0 = new Wire({ id: 'wire0', sourcePin: source.pins.out, targetPin: probe0.pins.in })
+        const probe0ToProbe1 = new Wire({ id: 'wire1', sourcePin: probe0.pins.out, targetPin: probe1.pins.in })
+        const circuit = new Circuit({ components: [source, probe0, probe1], wires: [sourceToProbe0, probe0ToProbe1] })
         const controller = new SimulationController(circuit)
 
         controller.tick()
