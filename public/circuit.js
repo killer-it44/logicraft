@@ -1,3 +1,4 @@
+// TODO maybe we can always instantly process / make the "out" a computed value, as the wires still need to propagate things
 export default class Circuit {
     constructor({ components, wires }) {
         this.components = components
@@ -60,9 +61,7 @@ export class ToggleSource {
         }
     }
 
-    process() {
-        // No-op for toggle source as it only changes state when toggled
-    }
+    process() { }
 
     setActive(active) {
         this.active = active
@@ -206,15 +205,11 @@ export class DisplayProbe {
         this.label = label
         this.position = position
         this.pins = {
-            in: { type: 'input', value: false },
-            out: { type: 'output', value: false }
+            in: { type: 'input', value: false }
         }
     }
 
-    process() {
-        // TODO maybe we can always instantly process / make out a computed value, as the wires still need to propagate things
-        this.pins['out'].value = this.pins['in'].value
-    }
+    process() { }
 
     getValue() {
         return this.pins['in'].value ? 1 : 0
