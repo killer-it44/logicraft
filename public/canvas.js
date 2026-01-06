@@ -71,14 +71,17 @@ export function Canvas({ onPointerMove }) {
             if (element.type) {
                 // node
                 const startPoint = toSvgPoint(event.clientX, event.clientY)
-                selection.current = { startPoint, element }
+                const offset = { x: startPoint.x - element.position.x, y: startPoint.y - element.position.y }
+                selection.current = { startPoint, offset, element }
             }
             else {
                 // wire
                 const startPoint = toSvgPoint(event.clientX, event.clientY)
+                const offsetFrom = { x: startPoint.x - element.from.x, y: startPoint.y - element.from.y }
+                const offsetTo = { x: startPoint.x - element.to.x, y: startPoint.y - element.to.y }
                 const isDraggingFrom = Math.hypot(startPoint.x - element.from.x, startPoint.y - element.from.y) < 10
                 const isDraggingTo = Math.hypot(startPoint.x - element.to.x, startPoint.y - element.to.y) < 10
-                selection.current = { startPoint, element, isDraggingFrom, isDraggingTo }
+                selection.current = { startPoint, element, offsetFrom, offsetTo, isDraggingFrom, isDraggingTo }
             }
         }
     }
@@ -92,34 +95,29 @@ export function Canvas({ onPointerMove }) {
             const startPoint = selection.current.startPoint
             if (!selection.current.isDragging && Math.hypot(startPoint.x - point.x, startPoint.y - point.y) <= 10) return
 
-            // FIXME when the component got snapped, it gets harder and harder to unsnapp while staying in dragging mode, the pointer moves further and further away
             selection.current.isDragging = true
-            const delta = { x: point.x - startPoint.x, y: point.y - startPoint.y }
-
+            
             if (selection.current.element.type) {
                 // component
                 const comp = selection.current.element
-                comp.position = snapToGrid({ x: comp.position.x + delta.x, y: comp.position.y + delta.y })
+                comp.position = snapToGrid({x: point.x - selection.current.offset.x, y: point.y - selection.current.offset.y})
             } else {
                 // wire
                 const wire = selection.current.element
                 if (selection.current.isDraggingFrom || !selection.current.isDraggingTo) {
-                    wire.from = snapWireEndpoint({ x: wire.from.x + delta.x, y: wire.from.y + delta.y }, wire, 'source')
+                    wire.from = snapWireEndpoint({ x: point.x - selection.current.offsetFrom.x, y: point.y - selection.current.offsetFrom.y }, wire, 'source')
                 }
                 if (selection.current.isDraggingTo || !selection.current.isDraggingFrom) {
-                    wire.to = snapWireEndpoint({ x: wire.to.x + delta.x, y: wire.to.y + delta.y }, wire, 'target')
+                    wire.to = snapWireEndpoint({ x: point.x - selection.current.offsetTo.x, y: point.y - selection.current.offsetTo.y }, wire, 'source')
                 }
             }
-            selection.current.startPoint = snapToGrid(point)
             setCircuit(new Circuit({ components: circuit.components, wires: circuit.wires }))
         } else if (event.buttons & 2) {
             // pan
-            // FIXME positioning on move is bit off when our window has a different aspect ratio than the viewbox, the cursor alwyas moves faster than the element in the direction of the larger dimension
-            const rect = svg.current.getBoundingClientRect()
+            const client = svg.current.getBoundingClientRect()
+            const scale = Math.max(viewBox.width / client.width, viewBox.height / client.height)
             setViewBox((prev) => {
-                const scaleX = prev.width / rect.width
-                const scaleY = prev.height / rect.height
-                return { ...prev, x: prev.x - event.movementX * scaleX, y: prev.y - event.movementY * scaleY }
+                return { ...prev, x: prev.x - event.movementX * scale, y: prev.y - event.movementY * scale }
             })
         }
     }
