@@ -41,15 +41,14 @@ export function Canvas({ onPointerMove }) {
         return () => svg.current.removeEventListener('wheel', wheel)
     }, [])
 
-    // FIXME right now our wires have a direction from source to target, but for snapping it would be better if
-    //          - either we can drag either endpoint to either input or output pins, but of course respecting the directionality, i.e. cannot connect both endpoints to outputs or both endpoints to inputs
-    //          - or we visualize the input vs. output pins differently to make it clear for the user which endpoint can connect to which pin
-    // FIXME should not be able to connect to input pins that are already connected
     // REVISE move to model layer and add tests
-    const findPinInRange = (point, pinType) => {
+    const findPinInRangeForWire = (point, wire, pinType) => {
         let [pin, position, closestDistance] = [null, null, Infinity]        
         for (const [componentId, pins] of pinRegistry.current.entries()) {
-            const matchingPins = pins.filter(p => circuit.getPin(componentId, p.id).type === pinType)
+            const matchingPins = pins.map(p => ({...p, pin: circuit.getPin(componentId, p.id)}))
+                .filter(entry => entry.pin.type === pinType)
+                .filter(entry => (pinType === 'output' || !circuit.wires.find(w => w.targetPin === entry.pin && w !== wire)))
+            
             for (const p of matchingPins) {
                 const distance = Math.hypot(p.x - point.x, p.y - point.y)
                 if (distance < closestDistance) {
@@ -61,7 +60,7 @@ export function Canvas({ onPointerMove }) {
     }
 
     const snapWireEndpoint = (point, wire, endpointKey) => {
-        const pinInRange = findPinInRange(point, endpointKey === 'source' ? 'output' : 'input')
+        const pinInRange = findPinInRangeForWire(point, wire, endpointKey === 'source' ? 'output' : 'input')
         wire[endpointKey === 'source' ? 'sourcePin' : 'targetPin'] = pinInRange.pin
         return snapToGrid(pinInRange.position)
     }
