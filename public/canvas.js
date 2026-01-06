@@ -37,7 +37,11 @@ export function Canvas({ onPointerMove }) {
     const [circuit, setCircuit] = useState(new Circuit({ components: [], wires: [] }))
     const pinRegistry = useRef(new Map())
 
-    useEffect(() => fetch('/demo-circuit.json').then(res => res.json()).then(data => setCircuit(Circuit.fromJSON(data))), [])
+    useEffect(() => {
+        svg.current.addEventListener('wheel', wheel, { passive: true })
+        fetch('/demo-circuit.json').then(res => res.json()).then(data => setCircuit(Circuit.fromJSON(data)))
+        return () => svg.current.removeEventListener('wheel', wheel)
+    }, [])
 
     // TODO right now our wires have a direction from source to target, but for snapping it would be better if we can drag either endpoint to either input or output pins, but of course respecting the directionality, i.e. cannot connect both endpoints to outputs or both endpoints to inputs
     const findPinInRange = (point, pinType) => {
@@ -132,7 +136,6 @@ export function Canvas({ onPointerMove }) {
     }
 
     const wheel = (event) => {
-        event.preventDefault()
         setViewBox((prev) => {
             if (event.ctrlKey || event.metaKey) {
                 // zoom
@@ -152,7 +155,7 @@ export function Canvas({ onPointerMove }) {
 
     return html`
         <svg ref=${svg} width="100%" height="100%" viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}"
-            onPointerDown=${pointerDown} onPointerMove=${move} onPointerUp=${pointerUp} onPointerCancel=${pointerUp} onContextMenu=${(e) => e.preventDefault()} onWheel=${wheel}
+            onPointerDown=${pointerDown} onPointerMove=${move} onPointerUp=${pointerUp} onPointerCancel=${pointerUp} onContextMenu=${(e) => e.preventDefault()}
         >
             <defs>
                 <pattern id="grid-pattern" width=${GRID_SPACING} height=${GRID_SPACING} patternUnits="userSpaceOnUse">
