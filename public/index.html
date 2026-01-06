@@ -5,15 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Logisiml</title>
     <script type="importmap">
-        {
-            "imports": {
-                "preact-standalone": "https://unpkg.com/htm@3.1.1/preact/standalone.module.js"
-            }
-        }
+        { "imports": { "preact-standalone": "https://unpkg.com/htm@3.1.1/preact/standalone.module.js" } }
+    </script>
+    <script type="module">
+        import { render, html } from 'preact-standalone'
+        import { App } from './app.js'
+        render(html`<${App} />`, document.body)        
     </script>
 </head>
 <body style="margin: 0;">
-    <div id="app" role="main"></div>
-    <script type="module" src="./app.js"></script>
 </body>
 </html>

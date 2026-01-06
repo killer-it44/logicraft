@@ -1,4 +1,3 @@
-// TODO maybe we can always instantly process / make the "out" a computed value, as the wires still need to propagate things
 export default class Circuit {
     constructor({ components, wires }) {
         this.components = components
@@ -63,9 +62,9 @@ export class ToggleSource {
 
     process() { }
 
-    setActive(active) {
-        this.active = active
-        this.pins['out'].value = active
+    toggle() {
+        this.active = !this.active
+        this.pins['out'].value = this.active
     }
 }
 
@@ -79,10 +78,12 @@ export class NotGate {
             in: { type: 'input', value: false },
             out: { type: 'output', value: true }
         }
+        this.active = this.pins.out.value
     }
 
     process() {
         this.pins['out'].value = !this.pins['in'].value
+        this.active = this.pins.out.value
     }
 }
 
@@ -97,10 +98,12 @@ export class AndGate {
             in1: { type: 'input', value: false },
             out: { type: 'output', value: false }
         }
+        this.active = this.pins.out.value
     }
 
     process() {
         this.pins['out'].value = this.pins['in0'].value && this.pins['in1'].value
+        this.active = this.pins.out.value
     }
 }
 
@@ -115,10 +118,12 @@ export class OrGate {
             in1: { type: 'input', value: false },
             out: { type: 'output', value: false }
         }
+        this.active = this.pins.out.value
     }
 
     process() {
         this.pins['out'].value = this.pins['in0'].value || this.pins['in1'].value
+        this.active = this.pins.out.value
     }
 }
 
@@ -133,10 +138,12 @@ export class NandGate {
             in1: { type: 'input', value: false },
             out: { type: 'output', value: true }
         }
+        this.active = this.pins.out.value
     }
 
     process() {
         this.pins['out'].value = !(this.pins['in0'].value && this.pins['in1'].value)
+        this.active = this.pins.out.value
     }
 }
 
@@ -151,10 +158,12 @@ export class NorGate {
             in1: { type: 'input', value: false },
             out: { type: 'output', value: true }
         }
+        this.active = this.pins.out.value
     }
 
     process() {
         this.pins['out'].value = !(this.pins['in0'].value || this.pins['in1'].value)
+        this.active = this.pins.out.value
     }
 }
 
@@ -169,12 +178,14 @@ export class XorGate {
             in1: { type: 'input', value: false },
             out: { type: 'output', value: false }
         }
+        this.active = this.pins.out.value
     }
 
     process() {
         const a = this.pins['in0'].value
         const b = this.pins['in1'].value
         this.pins['out'].value = a !== b
+        this.active = this.pins.out.value
     }
 }
 
@@ -195,6 +206,7 @@ export class XnorGate {
         const a = this.pins['in0'].value
         const b = this.pins['in1'].value
         this.pins['out'].value = a === b
+        this.active = this.pins.out.value
     }
 }
 
@@ -207,9 +219,12 @@ export class DisplayProbe {
         this.pins = {
             in: { type: 'input', value: false }
         }
+        this.active = this.pins.in.value
     }
 
-    process() { }
+    process() {
+        this.active = this.pins.in.value
+    }
 
     getValue() {
         return this.pins['in'].value ? 1 : 0
@@ -223,9 +238,11 @@ export class Wire {
         this.targetPin = targetPin
         this.from = from ? { ...from } : null
         this.to = to ? { ...to } : null
+        this.active = this.targetPin.value
     }
 
     propagateSignal() {
         this.targetPin.value = this.sourcePin.value
+        this.active = this.targetPin.value
     }
 }

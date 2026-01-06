@@ -14,7 +14,6 @@ describe('circuit components', () => {
 
         const probe = new DisplayProbe({ id: 'probe' })
         assert.equal(probe.pins.in.value, false)
-        assert.equal(probe.pins.out.value, false)
 
         const notGate = new NotGate({ id: 'not' })
         assert.equal(notGate.pins.in.value, false)
@@ -112,7 +111,7 @@ describe('circuit components', () => {
         wire.propagateSignal()
         assert.equal(probe.pins.in.value, true)
 
-        source.setActive(false)
+        source.toggle()
         wire.propagateSignal()
         assert.equal(probe.pins.in.value, false)
     })
