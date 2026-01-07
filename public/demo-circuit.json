@@ -4,33 +4,33 @@
 			"id": "toggle0",
 			"type": "source/toggle",
 			"label": "Input A",
-			"position": { "x": 100, "y": 160 },
+			"position": { "x": 100, "y": 100 },
 			"active": false
 		},
 		{
 			"id": "toggle1",
 			"type": "source/toggle",
 			"label": "Input B",
-			"position": { "x": 100, "y": 210 },
+			"position": { "x": 100, "y": 150 },
 			"active": false
 		},
 		{
 			"id": "not0",
 			"type": "gate/not",
 			"label": "NOT",
-			"position": { "x": 190, "y": 160 }
+			"position": { "x": 190, "y": 100 }
 		},
 		{
 			"id": "and0",
 			"type": "gate/and",
 			"label": "AND",
-			"position": { "x": 280, "y": 170 }
+			"position": { "x": 280, "y": 110 }
 		},
 		{
 			"id": "display0",
 			"type": "probe/display",
 			"label": "Result",
-			"position": { "x": 380, "y": 180 }
+			"position": { "x": 380, "y": 120 }
 		}
 	],
 	"wires": [
@@ -38,29 +38,29 @@
 			"id": "wire0",
 			"source": "toggle0/out",
 			"target": "not0/in",
-			"from": { "x": 150, "y": 170 },
-			"to": { "x": 180, "y": 170 }
+			"from": { "x": 150, "y": 110 },
+			"to": { "x": 180, "y": 110 }
 		},
 		{
 			"id": "wire1",
 			"source": "not0/out",
 			"target": "and0/in0",
-			"from": { "x": 230, "y": 170 },
-			"to": { "x": 270, "y": 180 }
+			"from": { "x": 230, "y": 110 },
+			"to": { "x": 270, "y": 120 }
 		},
 		{
 			"id": "wire2",
 			"source": "toggle1/out",
 			"target": "and0/in1",
-			"from": { "x": 150, "y": 220 },
-			"to": { "x": 270, "y": 200 }
+			"from": { "x": 150, "y": 160 },
+			"to": { "x": 270, "y": 140 }
 		},
 		{
 			"id": "wire3",
 			"source": "and0/out",
 			"target": "display0/in",
-			"from": { "x": 330, "y": 190 },
-			"to": { "x": 370, "y": 190 }
+			"from": { "x": 330, "y": 130 },
+			"to": { "x": 370, "y": 130 }
 		}
 	]
 }

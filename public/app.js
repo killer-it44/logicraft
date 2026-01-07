@@ -1,10 +1,10 @@
-import { html, useRef, useState, useEffect, useCallback } from 'preact-standalone'
-import Circuit from './circuit.js'
+import { html, useRef, useState, useEffect } from 'preact-standalone'
+import Circuit, { ToggleSource, NotGate, AndGate, OrGate, NandGate, NorGate, XorGate, XnorGate, DisplayProbe } from './circuit.js'
 import { ToggleNode, NotGateNode, AndGateNode, OrGateNode, NandGateNode, NorGateNode, XorGateNode, XnorGateNode, DisplayProbeNode, WirePath } from './ui-components.js'
 import { SimulationController } from './simulation-controller.js'
 
 const GRID_SPACING = 10
-const INITIAL_VIEWBOX = { x: 0, y: 0, width: 800, height: 480 }
+const INITIAL_VIEWBOX = { x: -100, y: -50, width: 800, height: 480 }
 const ZOOM_SPEED = 1.07
 const MIN_WIDTH = INITIAL_VIEWBOX.width / 10
 const MAX_WIDTH = INITIAL_VIEWBOX.width * 10
@@ -18,15 +18,15 @@ const snapToGrid = ({ x, y }) => ({
 })
 
 const Components = {
-    'source/toggle': ToggleNode,
-    'gate/not': NotGateNode,
-    'gate/and': AndGateNode,
-    'gate/or': OrGateNode,
-    'gate/nand': NandGateNode,
-    'gate/nor': NorGateNode,
-    'gate/xor': XorGateNode,
-    'gate/xnor': XnorGateNode,
-    'probe/display': DisplayProbeNode
+    'source/toggle': { UI: ToggleNode, Model: ToggleSource, title: 'Toggle Source', description: 'Manual binary switch.', accent: '#fb923c' },
+    'gate/not': { UI: NotGateNode, Model: NotGate, title: 'NOT Gate', description: 'Inverts a single signal.', accent: '#0ea5e9' },
+    'gate/and': { UI:AndGateNode, Model: AndGate, title: 'AND Gate', description: 'Outputs 1 when both inputs are 1.', accent: '#10b981' },
+    'gate/or': { UI: OrGateNode, Model: OrGate, title: 'OR Gate', description: 'Outputs 1 when any input is 1.', accent: '#fbbf24' },
+    'gate/nand': { UI: NandGateNode, Model: NandGate, title: 'NAND Gate', description: 'Inverse of AND output.', accent: '#f43f5e' },
+    'gate/nor': { UI: NorGateNode, Model: NorGate, title: 'NOR Gate', description: 'Inverse of OR output.', accent: '#8b5cf6' },
+    'gate/xor': { UI: XorGateNode, Model: XorGate, title: 'XOR Gate', description: 'True when inputs differ.', accent: '#22d3ee' },
+    'gate/xnor': { UI: XnorGateNode, Model: XnorGate, title: 'XNOR Gate', description: 'True when inputs are the same.', accent: '#a3e635' },
+    'probe/display': { UI: DisplayProbeNode, Model: DisplayProbe, title: 'Display', description: 'Visualizes an input signal.', accent: '#f97316' }
 }
 
 export function App() {
@@ -38,8 +38,9 @@ export function App() {
     const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 })
     const [stepsPerTick, setStepsPerTick] = useState(1)
     const [isPlaying, setIsPlaying] = useState(false)
+    const [isLibraryMinimized, setIsLibraryMinimized] = useState(true)
     const simulationController = useRef(new SimulationController())
-    
+
     useEffect(() => fetch('/demo-circuit.json').then(res => res.json()).then(data => setCircuit(Circuit.fromJSON(data))), [])
 
     const step = () => {
@@ -59,14 +60,29 @@ export function App() {
     const stop = () => {
     }
 
+    const nextId = (prefix) => {
+        const nums = circuit.components
+            .filter(c => c.id.startsWith(prefix))
+            .map(c => Number(c.id.slice(prefix.length)))
+            .filter(n => Number.isFinite(n))
+        const max = nums.length ? Math.max(...nums) : -1
+        return `${prefix}${max + 1}`
+    }
+
+    const addComponent = (type) => {
+        const position = snapToGrid({ x: viewBox.x + 200, y: viewBox.y + 100 })
+        const comp = new Components[type].Model({ id: nextId(type.split('/')[1]), position })
+        setCircuit(new Circuit({ components: [...circuit.components, comp], wires: circuit.wires }))
+    }
+
     // REVISE move to model layer and add tests
     const findPinInRangeForWire = (point, wire, pinType) => {
-        let [pin, position, closestDistance] = [null, null, Infinity]        
+        let [pin, position, closestDistance] = [null, null, Infinity]
         for (const [componentId, pins] of pinRegistry.current.entries()) {
-            const matchingPins = pins.map(p => ({...p, pin: circuit.getPin(componentId, p.id)}))
+            const matchingPins = pins.map(p => ({ ...p, pin: circuit.getPin(componentId, p.id) }))
                 .filter(entry => entry.pin.type === pinType)
                 .filter(entry => (pinType === 'output' || !circuit.wires.find(w => w.targetPin === entry.pin && w !== wire)))
-            
+
             for (const p of matchingPins) {
                 const distance = Math.hypot(p.x - point.x, p.y - point.y)
                 if (distance < closestDistance) {
@@ -179,22 +195,49 @@ export function App() {
         })
     }
 
-    const toolbarButtonStyle = 'border: 1px solid rgba(148, 163, 184, 0.5); border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: #f8fafc; background: rgba(15, 23, 42, 0.7); cursor: pointer; transition: opacity 0.2s, background 0.2s;'
-    const toolbarAccentButtonStyle = `${toolbarButtonStyle} background: #2563eb; color: #f8fafc;`
-
     return html`
-        <aside role="region" aria-label="Simulation controls" style="position: fixed; top: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.85); border-radius: 999px; padding: 6px 16px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.35); z-index: 30; font-family: sans-serif; font-size: 13px;">
-            <label style="display: flex; align-items: center; gap: 6px; color: #f8fafc;">
-                <span style="font-weight: 600;">Steps per Tick:</span>
-                <input type="number" min="1" step="1" value=${stepsPerTick} onChange=${(e) => setStepsPerTick(Number(e.target.value))} style="width: 60px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.5); background: #0f172a; color: #f8fafc; padding: 4px 6px; font-size: 13px;" />
+        <style>
+            aside {
+                background: #0f172ad9;
+                color: #f8fafc;
+                border-radius: 8px;
+                font-family: 'Space Grotesk', sans-serif;
+                font-size: 13px;
+                box-shadow: 0 8px 16px #02061759;
+                padding: 6px 10px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            aside input, aside button {
+                border: 1px solid #94a3b880;
+                border-radius: 6px;
+                font: inherit;
+                color: inherit;
+                padding: 4px 8px;
+            }
+            aside input {
+                width: 4em;
+                background: #0f172aff;
+            }
+            aside button {
+                font-weight: bold;
+                background: #2563eb;
+                cursor: pointer;
+            }
+        </style>
+        <aside role="region" aria-label="Simulation controls" style="position: fixed; top: 16px; left: 50%; transform: translateX(-50%);">
+            <label>
+                <span style="font-weight: bold;">Steps per Tick: </span>
+                <input type="number" min="1" step="1" value=${stepsPerTick} onChange=${(e) => setStepsPerTick(Number(e.target.value))} />
             </label>
-            <button type="button" onClick=${step} style=${toolbarAccentButtonStyle}>Step</button>
-            <button type="button" onClick=${tick} style=${toolbarButtonStyle}>Tick</button>
-            <button type="button" onClick=${play} disabled=${isPlaying} style=${toolbarAccentButtonStyle + (isPlaying ? ' opacity: 0.5; cursor: not-allowed;' : '')}>Play</button>
-            <button type="button" onClick=${pause} disabled=${!isPlaying} style=${toolbarAccentButtonStyle + (!isPlaying ? ' opacity: 0.5; cursor: not-allowed;' : '')}>Pause</button>
-            <button type="button" onClick=${stop} style=${toolbarButtonStyle}>Stop</button>
+            <button type="button" onClick=${step}>Step</button>
+            <button type="button" onClick=${tick}>Tick</button>
+            <button type="button" onClick=${play} disabled=${isPlaying} style=${(isPlaying ? ' opacity: 0.5; cursor: not-allowed;' : '')}>Play</button>
+            <button type="button" onClick=${pause} disabled=${!isPlaying} style=${(!isPlaying ? ' opacity: 0.5; cursor: not-allowed;' : '')}>Pause</button>
+            <button type="button" onClick=${stop}>Stop</button>
         </aside>    
-        <main style="width: 100vw; height: 100vh; overflow: hidden;">
+        <main style="width: 100vw; height: 100vh; overflow: hidden; cursor: ${selection.current ? 'grabbing' : 'default'};">
             <svg ref=${svg} width="100vw" height="100vh" viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}"
                 onPointerDown=${pointerDown} onPointerMove=${move} onPointerUp=${pointerUp} onPointerCancel=${pointerUp} onContextMenu=${(e) => e.preventDefault()} onWheel=${wheel}
             >
@@ -206,20 +249,50 @@ export function App() {
                 <rect x=${-MAX_WIDTH} y=${-MAX_WIDTH} width=${MAX_WIDTH * 2} height=${MAX_WIDTH * 2} fill="url(#grid-pattern)" />
 
                 ${circuit.components.map(comp => html`
-                <g key=${comp.id} onPointerDown=${(event) => pointerDown(event, comp)}>
-                    <${Components[comp.type]} id=${comp.id} label=${comp.label} position=${comp.position} active=${comp.active} pinRegistry=${pinRegistry.current} />
+                <g style="cursor: ${selection.current ? 'inherit' : comp.type === 'source/toggle' ? 'pointer' : 'grab'};" key=${comp.id} onPointerDown=${(event) => pointerDown(event, comp)}>
+                    <${Components[comp.type].UI} id=${comp.id} label=${comp.label} position=${comp.position} active=${comp.active} pinRegistry=${pinRegistry.current} />
                 </g>
                 `)}
 
                 ${circuit.wires.map(wire => html`
-                <g key=${wire.id} onPointerDown=${(event) => pointerDown(event, wire)}>
+                <g style="cursor: ${selection.current ? 'inherit' : 'grab'};" key=${wire.id} onPointerDown=${(event) => pointerDown(event, wire)}>
                     <${WirePath} id=${wire.id} from=${wire.from} sourcePin=${wire.sourcePin} to=${wire.to} targetPin=${wire.targetPin} active=${wire.active} />
                 </g>
                 `)}
             </svg>
         </main>
-        <aside style="position: fixed; bottom: 8px; left: 8px; background: rgba(255, 255, 255, 0.8); padding: 4px 8px; border-radius: 4px; font-family: sans-serif; font-size: 14px;">
+        <aside style="position: fixed; bottom: 16px; right: 16px;">
             x: ${Math.round(pointerPosition.x)}, y: ${Math.round(pointerPosition.y)}
+        </aside>
+
+        <aside role="region" aria-label="Library" aria-expanded=${!isLibraryMinimized} style="position: fixed; top: 16px; left: 16px; ${isLibraryMinimized ? '' : 'bottom: 16px; width: 240px;'} background: linear-gradient(180deg, #fefce8 0%, #f8fafc 55%, #e2e8f0 100%); padding: ${isLibraryMinimized ? '10px' : '24px 18px'}; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid rgba(15, 23, 42, 0.1); z-index: 20; color: #0f172a; font-family: 'Space Grotesk', sans-serif; transition: width 0.15s ease, padding 0.15s ease; overflow: hidden;">
+            <div style="display: flex; align-items: center; justify-content: ${isLibraryMinimized ? 'center' : 'space-between'}; gap: 8px;">
+                ${isLibraryMinimized ? html`
+                    <button type="button" aria-label="Expand library" title="Expand" onClick=${() => setIsLibraryMinimized(false)} style="border: 1px solid rgba(15, 23, 42, 0.2); border-radius: 8px; background: #ffffff; color: inherit; cursor: pointer; display: grid; place-items: center; font-weight: 700;">Library 📁</button>
+                ` : html`
+                    <div>
+                        <h2 style="margin: 0; font-size: 18px; letter-spacing: 0.05em; text-transform: uppercase;">Library</h2>
+                        <p style="margin: 6px 0 0; font-size: 13px; color: rgba(15, 23, 42, 0.65);">Click a block to insert it into the canvas.</p>
+                    </div>
+                    <button type="button" aria-label="Minimize library" title="Minimize" onClick=${() => setIsLibraryMinimized(true)} style="border: 1px solid rgba(15, 23, 42, 0.2); border-radius: 8px; background: #ffffff; color: inherit; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; font-weight: 700;">‹</button>
+                `}
+            </div>
+            ${!isLibraryMinimized && html`
+            <div style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding-right: 6px;">
+                ${Object.entries(Components).map(Comp => ({ type: Comp[0], ...Comp[1] })).map(entry => html`
+                    <button type="button" onClick=${() => addComponent(entry.type)} onPointerEnter=${(event) => {
+                        event.currentTarget.style.transform = 'translateX(4px)'
+                        event.currentTarget.style.boxShadow = `inset 3px 0 0 ${entry.accent}`
+                    }} onPointerLeave=${(event) => {
+                        event.currentTarget.style.transform = 'translateX(0)'
+                        event.currentTarget.style.boxShadow = `inset 3px 0 0 ${entry.accent}`
+                    }} style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 14px; padding: 12px 14px 12px 18px; background: #ffffff; color: inherit; cursor: pointer; box-shadow: inset 3px 0 0 ${entry.accent}; transition: transform 0.15s ease, box-shadow 0.15s ease; font-family: 'Space Grotesk', sans-serif; text-align: left;">
+                        <span style="font-size: 14px; font-weight: 600; letter-spacing: 0.03em;">${entry.title}</span>
+                        <span style="font-size: 12px; color: rgba(15, 23, 42, 0.65);">${entry.description}</span>
+                    </button>
+                `)}
+            </div>
+            `}
         </aside>
     `
 }
