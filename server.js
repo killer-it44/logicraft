@@ -77,5 +77,5 @@ const server = createServer(async (req, res) => {
 
 const PORT = Number(process.env.PORT ?? 3000)
 server.listen(PORT, () => {
-    console.log(`logisiml dev server running at http://localhost:${PORT}`)
+    console.log(`server running at http://localhost:${PORT}`)
 })

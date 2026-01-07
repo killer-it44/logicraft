@@ -40,11 +40,7 @@ export function App() {
     const [isPlaying, setIsPlaying] = useState(false)
     const simulationController = useRef(new SimulationController())
     
-    useEffect(() => {
-        svg.current.addEventListener('wheel', wheel, { passive: true })
-        fetch('/demo-circuit.json').then(res => res.json()).then(data => setCircuit(Circuit.fromJSON(data)))
-        return () => svg.current.removeEventListener('wheel', wheel)
-    }, [])
+    useEffect(() => fetch('/demo-circuit.json').then(res => res.json()).then(data => setCircuit(Circuit.fromJSON(data))), [])
 
     const step = () => {
         simulationController.current.step(circuit)
@@ -165,6 +161,7 @@ export function App() {
     }
 
     const wheel = (event) => {
+        event.preventDefault()
         setViewBox((prev) => {
             if (event.ctrlKey || event.metaKey) {
                 // zoom
@@ -199,7 +196,7 @@ export function App() {
         </aside>    
         <main style="width: 100vw; height: 100vh; overflow: hidden;">
             <svg ref=${svg} width="100vw" height="100vh" viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}"
-                onPointerDown=${pointerDown} onPointerMove=${move} onPointerUp=${pointerUp} onPointerCancel=${pointerUp} onContextMenu=${(e) => e.preventDefault()}
+                onPointerDown=${pointerDown} onPointerMove=${move} onPointerUp=${pointerUp} onPointerCancel=${pointerUp} onContextMenu=${(e) => e.preventDefault()} onWheel=${wheel}
             >
                 <defs>
                     <pattern id="grid-pattern" width=${GRID_SPACING} height=${GRID_SPACING} patternUnits="userSpaceOnUse">
@@ -216,7 +213,7 @@ export function App() {
 
                 ${circuit.wires.map(wire => html`
                 <g key=${wire.id} onPointerDown=${(event) => pointerDown(event, wire)}>
-                    <${WirePath} from=${wire.from} sourcePin=${wire.sourcePin} to=${wire.to} targetPin=${wire.targetPin} active=${wire.active} />
+                    <${WirePath} id=${wire.id} from=${wire.from} sourcePin=${wire.sourcePin} to=${wire.to} targetPin=${wire.targetPin} active=${wire.active} />
                 </g>
                 `)}
             </svg>
