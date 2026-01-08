@@ -1,11 +1,22 @@
 export default class Circuit {
-    constructor({ components, wires }) {
+    constructor({ title, components, wires }) {
+        this.title = title
         this.components = components
         this.wires = wires
     }
 
     getPin(componentId, pinId) {
         return this.components.find(c => c.id === componentId).pins[pinId]
+    }
+
+    getPinPath(pin) {
+        const component = this.findComponentForPin(pin)
+        const pinId = Object.keys(component.pins).find(key => component.pins[key] === pin)
+        return `${component.id}/${pinId}`
+    }
+
+    findComponentForPin(pin) {
+        return this.components.find(c => Object.values(c.pins).includes(pin))
     }
 
     findConnectedWireHeads(component) {
@@ -16,6 +27,31 @@ export default class Circuit {
             result.push(...this.wires.filter(w => (w.targetPin === pin)).map(wire => ({ wireHead: wire.to, pinId })))
         })
         return result
+    }
+
+    toJSON() {
+        return {
+            title: this.title,
+            components: this.components.map(comp => {
+                const baseJson = {
+                    id: comp.id,
+                    type: comp.type,
+                    label: comp.label,
+                    position: structuredClone(comp.position)
+                }
+                if (comp.type === 'source/toggle') {
+                    baseJson.active = comp.active
+                }
+                return baseJson
+            }),
+            wires: this.wires.map(wire => ({
+                id: wire.id,
+                source: this.getPinPath(wire.sourcePin),
+                target: this.getPinPath(wire.targetPin),
+                from: wire.from ? { ...wire.from } : null,
+                to: wire.to ? { ...wire.to } : null
+            }))
+        }
     }
 
     static fromJSON(json) {
@@ -44,7 +80,7 @@ export default class Circuit {
             const [from, to] = [structuredClone(wireJson.from), structuredClone(wireJson.to)]
             return new Wire({ id: wireJson.id, sourcePin, targetPin, from, to })
         })
-        return new Circuit({ components, wires })
+        return new Circuit({ title: json.title, components, wires })
     }
 }
 
@@ -217,7 +253,7 @@ export class DisplayProbe {
         this.label = label
         this.position = position
         this.pins = {
-            in: { type: 'input', value: false }
+            in: { type: 'input', value: false, component: this }
         }
         this.active = this.pins.in.value
     }
@@ -238,11 +274,13 @@ export class Wire {
         this.targetPin = targetPin
         this.from = from ? { ...from } : null
         this.to = to ? { ...to } : null
-        this.active = this.targetPin.value
+        this.active = this.targetPin ? this.targetPin.value : false
     }
 
     propagateSignal() {
-        this.targetPin.value = this.sourcePin.value
-        this.active = this.targetPin.value
+        if (this.sourcePin && this.targetPin) {
+            this.targetPin.value = this.sourcePin.value
+            this.active = this.targetPin.value
+        }
     }
 }
