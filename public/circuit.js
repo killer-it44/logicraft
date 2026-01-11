@@ -61,10 +61,10 @@ export default class Circuit {
         })
 
         const wires = json.wires.map((wireJson) => {
-            const [sourceCompId, sourcePinId] = wireJson.source.split('/')
-            const sourcePin = components.find(c => c.id === sourceCompId).pins[sourcePinId]
-            const [targetCompId, targetPinId] = wireJson.target.split('/')
-            const targetPin = components.find(c => c.id === targetCompId).pins[targetPinId]
+            const [sourceCompId, sourcePinId] = wireJson.source ? wireJson.source.split('/') : []
+            const sourcePin = sourceCompId ? components.find(c => c.id === sourceCompId).pins[sourcePinId] : undefined
+            const [targetCompId, targetPinId] = wireJson.target ? wireJson.target.split('/') : []
+            const targetPin = targetCompId ? components.find(c => c.id === targetCompId).pins[targetPinId] : undefined
             const [from, to] = [wireJson.from, wireJson.to]
             return new Wire({ id: wireJson.id, sourcePin, targetPin, from, to })
         })
@@ -136,7 +136,7 @@ export class NandGate extends Component {
         super({ ...options, type: 'gate/nand', pins: { 'in0': 'input', 'in1': 'input', 'out': 'output' } })
     }
 
-    calculateOut() {
+    process() {
         this.pins.out.value = !(this.pins.in0.value && this.pins.in1.value)
     }
 }
