@@ -38,17 +38,15 @@ export function App() {
     const svg = useRef()
     const selection = useRef()
     const [viewBox, setViewBox] = useState(INITIAL_VIEWBOX)
-    const [circuit, setCircuit] = useState(new Circuit({ title: 'Untitled Circuit', components: [], wires: [] }))
     const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 })
-    const [stepsPerTick, setStepsPerTick] = useState(1)
-    const [isPlaying, setPlaying] = useState(false)
     const [selectedElement, setSelectedElement] = useState()
-    const simulationController = useRef(new SimulationController())
+    const [circuit, setCircuit] = useState(new Circuit({ title: 'Untitled Circuit', components: [], wires: [] }))
+    const [simulationController, setSimulationController] = useState(new SimulationController({ stepsPerTick: 2 }))
 
     useEffect(() => {
         const onKeyDown = (e) => {
             if (e.key !== 'Backspace' && e.key !== 'Delete') return
-            if (document.activeElement?.isContentEditable || !selectedElement) return
+            if (!svg.current.isActive || !selectedElement) return
             deleteElement(selectedElement)
             setSelectedElement(undefined)
         }
@@ -68,36 +66,37 @@ export function App() {
         setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
     }
 
+    const setStepsPerTick = (steps) => {
+        const newSimulationController = new SimulationController({ stepsPerTick: steps })
+        if (simulationController.isPlaying) {
+            simulationController.pause()
+            newSimulationController.play(circuit, function onTick() {
+                setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
+            })
+        }
+        setSimulationController(newSimulationController)
+    }
+
     const step = () => {
-        simulationController.current.step(circuit)
+        simulationController.step(circuit)
         setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
     }
 
     const tick = () => {
-        for (let i = 0; i < stepsPerTick; i++) {
-            simulationController.current.step(circuit)
-            setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
-        }
+        simulationController.tick(circuit)
+        setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
     }
 
-    const play = () => {
-        if (!isPlaying) {
-            simulationController.current.isPlaying = true
-            const play = async () => {
-                while (simulationController.current.isPlaying) {
-                    for (let i = 0; i < stepsPerTick; i++) {
-                        simulationController.current.step(circuit)
-                        setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
-                        await new Promise(resolve => setTimeout(resolve, 1000))
-                    }
-                }
-            }
-            play()
-            setPlaying(true)
+    const playOrPause = () => {
+        const newSimulationController = new SimulationController({ stepsPerTick: simulationController.stepsPerTick })
+        if (simulationController.isPlaying) {
+            simulationController.pause()
         } else {
-            simulationController.current.isPlaying = false
-            setPlaying(false)
+            newSimulationController.play(circuit, function onTick() {
+                setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
+            })
         }
+        setSimulationController(newSimulationController)
     }
 
     const reset = () => {
@@ -291,23 +290,23 @@ export function App() {
             }
         </style>
         <aside style="position: fixed; top: 16px; left: 16px;">
-            <input type="text" value=${circuit.title} onChange=${() => null} style="width: 160px;" />
+            <input type="text" value=${circuit.title} onInput=${(e) => setCircuit(new Circuit({ title: e.target.value, components: circuit.components, wires: circuit.wires }))} style="width: 160px;" />
             <button type="button" onClick=${open}>Open</button>
             <button type="button" onClick=${save}>Save</button>
         </aside>
         <aside style="position: fixed; top: 16px; left: 50%; transform: translateX(-50%);">
             <label>
                 <span style="font-weight: bold;">Steps per Tick: </span>
-                <input type="number" min="1" step="1" value=${stepsPerTick} onChange=${(e) => setStepsPerTick(Number(e.target.value))} />
+                <input type="number" min="2" step="1" value=${simulationController.stepsPerTick} onInput=${(e) => setStepsPerTick(Number(e.target.value))} />
             </label>
             <img onClick=${step} title="One single step" src="icons/step.svg" width="28" height="28" />
             <img onClick=${tick} title="One full clock tick" src="icons/tick.svg" width="28" height="28" />
-            <img onClick=${play} title=${isPlaying ? 'Pause' : 'Play continuously'} src=${isPlaying ? 'icons/pause.svg' : 'icons/play.svg'} width="28" height="28" />
+            <img onClick=${playOrPause} title=${simulationController.isPlaying ? 'Pause' : 'Play continuously'} src=${simulationController.isPlaying ? 'icons/pause.svg' : 'icons/play.svg'} width="28" height="28" />
             <img onClick=${reset} title="Reset" src="icons/reset.svg" width="28" height="28" />
         </aside>    
         <main style="overflow: hidden;">
             <svg ref=${svg} width="100vw" height="100vh" viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}" style="cursor: ${selection.current ? 'grabbing' : 'default'};"
-                onPointerDown=${pointerDown} onPointerMove=${move} onPointerUp=${pointerUp} onPointerCancel=${pointerUp} onContextMenu=${(e) => e.preventDefault()} onWheel=${wheel}
+                onPointerDown=${pointerDown} onPointerMove=${move} onPointerUp=${pointerUp} onPointerCancel=${pointerUp} onContextMenu=${(e) => e.preventDefault()} onWheel=${wheel} onPointerLeave=${() => svg.current.isActive = false} onPointerEnter=${() => svg.current.isActive = true}
             >
                 <defs>
                     <pattern id="grid-pattern" width=${GRID_SPACING} height=${GRID_SPACING} patternUnits="userSpaceOnUse">
