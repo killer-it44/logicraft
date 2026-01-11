@@ -5,58 +5,46 @@ export default class Circuit {
         this.wires = wires
     }
 
-    getPin(componentId, pinId) {
-        return this.components.find(c => c.id === componentId).pins[pinId]
+    nextId(prefix) {
+        const ids = [...this.components.map(c => c.id), ...this.wires.map(w => w.id)]
+        const nums = ids.filter(id => id.startsWith(prefix)).map(id => Number(id.match(/^.+?(\d+)$/)?.[1]))
+        return `${prefix}${Math.max(...nums, -1) + 1}`
     }
 
-    getPinPath(pin) {
-        const component = this.findComponentForPin(pin)
-        const pinId = Object.keys(component.pins).find(key => component.pins[key] === pin)
-        return `${component.id}/${pinId}`
+    findAvailablePins(pinType) {
+        return this.components.map(c => Object.values(c.pins)).flat()
+            .filter(p => (p.type === pinType || !pinType))
+            .filter(p => p.type === 'output' || (p.type === 'input' && p.connectedWires.length === 0))
     }
 
-    findComponentForPin(pin) {
-        return this.components.find(c => Object.values(c.pins).includes(pin))
+    deleteComponent(component) {
+        Object.values(component.pins).forEach(pin => pin.connectedWires.forEach(wire => wire.disconnectFrom(pin)))
+        this.components.splice(this.components.indexOf(component), 1)
     }
 
-    findConnectedWireHeads(component) {
-        const result = []
-        Object.keys(component.pins).forEach(pinId => {
-            const pin = component.pins[pinId]
-            result.push(...this.wires.filter(w => (w.sourcePin === pin)).map(wire => ({ wireHead: wire.from, pinId })))
-            result.push(...this.wires.filter(w => (w.targetPin === pin)).map(wire => ({ wireHead: wire.to, pinId })))
-        })
-        return result
+    deleteWire(wire) {
+        wire.disconnectFrom(wire.sourcePin)
+        wire.disconnectFrom(wire.targetPin)
+        this.wires.splice(this.wires.indexOf(wire), 1)
+    }
+
+    resetState() {
+        this.components.forEach(comp => Object.values(comp.pins).forEach(pin => pin.value = false))
+        this.wires.forEach(wire => wire.active = false)
     }
 
     toJSON() {
+        const path = (pin) => pin ? `${pin.component.id}/${pin.id}` : null
         return {
             title: this.title,
-            components: this.components.map(comp => {
-                const baseJson = {
-                    id: comp.id,
-                    type: comp.type,
-                    label: comp.label,
-                    position: structuredClone(comp.position)
-                }
-                if (comp.type === 'source/toggle') {
-                    baseJson.active = comp.active
-                }
-                return baseJson
-            }),
-            wires: this.wires.map(wire => ({
-                id: wire.id,
-                source: this.getPinPath(wire.sourcePin),
-                target: this.getPinPath(wire.targetPin),
-                from: wire.from ? { ...wire.from } : null,
-                to: wire.to ? { ...wire.to } : null
-            }))
+            components: this.components.map(c => ({ id: c.id, type: c.type, label: c.label, position: c.position })),
+            wires: this.wires.map(w => ({ id: w.id, source: path(w.sourcePin), target: path(w.targetPin), from: w.from, to: w.to }))
         }
     }
 
     static fromJSON(json) {
         const components = json.components.map((compJson) => {
-            const baseConfig = { id: compJson.id, label: compJson.label, position: structuredClone(compJson.position) }
+            const baseConfig = { id: compJson.id, label: compJson.label, position: compJson.position }
 
             switch (compJson.type) {
                 case 'source/toggle': return new ToggleSource({ ...baseConfig, active: compJson.active })
@@ -77,185 +65,120 @@ export default class Circuit {
             const sourcePin = components.find(c => c.id === sourceCompId).pins[sourcePinId]
             const [targetCompId, targetPinId] = wireJson.target.split('/')
             const targetPin = components.find(c => c.id === targetCompId).pins[targetPinId]
-            const [from, to] = [structuredClone(wireJson.from), structuredClone(wireJson.to)]
+            const [from, to] = [wireJson.from, wireJson.to]
             return new Wire({ id: wireJson.id, sourcePin, targetPin, from, to })
         })
         return new Circuit({ title: json.title, components, wires })
     }
 }
 
-export class ToggleSource {
-    constructor({ id, active, label, position }) {
+export class Component {
+    constructor({ id, type, label, position, pins }) {
         this.id = id
-        this.type = 'source/toggle'
+        this.type = type
         this.label = label
         this.position = position
-        this.active = active
-        this.pins = {
-            out: { type: 'output', value: active }
-        }
+        this.pins = {}
+        Object.entries(pins).forEach(([pId, type]) => {
+            this.pins[pId] = { id: pId, type, connectedWires: [], value: false, component: this }
+        })
+    }
+
+    isActive() {
+        return this.pins.out.value
+    }
+}
+
+export class ToggleSource extends Component {
+    constructor(options) {
+        super({ ...options, type: 'source/toggle', pins: { 'out': 'output' } })
     }
 
     process() { }
 
     toggle() {
-        this.active = !this.active
-        this.pins['out'].value = this.active
+        this.pins.out.value = !this.pins.out.value
     }
 }
 
-export class NotGate {
-    constructor({ id, label, position }) {
-        this.id = id
-        this.type = 'gate/not'
-        this.label = label
-        this.position = position
-        this.pins = {
-            in: { type: 'input', value: false },
-            out: { type: 'output', value: true }
-        }
-        this.active = this.pins.out.value
+export class NotGate extends Component {
+    constructor(options) {
+        super({ ...options, type: 'gate/not', pins: { 'in': 'input', 'out': 'output' } })
     }
 
     process() {
-        this.pins['out'].value = !this.pins['in'].value
-        this.active = this.pins.out.value
+        this.pins.out.value = !this.pins.in.value
     }
 }
 
-export class AndGate {
-    constructor({ id, label, position }) {
-        this.id = id
-        this.type = 'gate/and'
-        this.label = label
-        this.position = position
-        this.pins = {
-            in0: { type: 'input', value: false },
-            in1: { type: 'input', value: false },
-            out: { type: 'output', value: false }
-        }
-        this.active = this.pins.out.value
+export class AndGate extends Component {
+    constructor(options) {
+        super({ ...options, type: 'gate/and', pins: { 'in0': 'input', 'in1': 'input', 'out': 'output' } })
     }
 
     process() {
-        this.pins['out'].value = this.pins['in0'].value && this.pins['in1'].value
-        this.active = this.pins.out.value
+        this.pins.out.value = this.pins.in0.value && this.pins.in1.value
     }
 }
 
-export class OrGate {
-    constructor({ id, label, position }) {
-        this.id = id
-        this.type = 'gate/or'
-        this.label = label
-        this.position = position
-        this.pins = {
-            in0: { type: 'input', value: false },
-            in1: { type: 'input', value: false },
-            out: { type: 'output', value: false }
-        }
-        this.active = this.pins.out.value
+export class OrGate extends Component {
+    constructor(options) {
+        super({ ...options, type: 'gate/or', pins: { 'in0': 'input', 'in1': 'input', 'out': 'output' } })
     }
 
     process() {
-        this.pins['out'].value = this.pins['in0'].value || this.pins['in1'].value
-        this.active = this.pins.out.value
+        this.pins.out.value = this.pins.in0.value || this.pins.in1.value
     }
 }
 
-export class NandGate {
-    constructor({ id, label, position }) {
-        this.id = id
-        this.type = 'gate/nand'
-        this.label = label
-        this.position = position
-        this.pins = {
-            in0: { type: 'input', value: false },
-            in1: { type: 'input', value: false },
-            out: { type: 'output', value: true }
-        }
-        this.active = this.pins.out.value
+export class NandGate extends Component {
+    constructor(options) {
+        super({ ...options, type: 'gate/nand', pins: { 'in0': 'input', 'in1': 'input', 'out': 'output' } })
+    }
+
+    calculateOut() {
+        this.pins.out.value = !(this.pins.in0.value && this.pins.in1.value)
+    }
+}
+
+export class NorGate extends Component {
+    constructor(options) {
+        super({ ...options, type: 'gate/nor', pins: { 'in0': 'input', 'in1': 'input', 'out': 'output' } })
     }
 
     process() {
-        this.pins['out'].value = !(this.pins['in0'].value && this.pins['in1'].value)
-        this.active = this.pins.out.value
+        this.pins.out.value = !(this.pins.in0.value || this.pins.in1.value)
     }
 }
 
-export class NorGate {
-    constructor({ id, label, position }) {
-        this.id = id
-        this.type = 'gate/nor'
-        this.label = label
-        this.position = position
-        this.pins = {
-            in0: { type: 'input', value: false },
-            in1: { type: 'input', value: false },
-            out: { type: 'output', value: true }
-        }
-        this.active = this.pins.out.value
+export class XorGate extends Component {
+    constructor(options) {
+        super({ ...options, type: 'gate/xor', pins: { 'in0': 'input', 'in1': 'input', 'out': 'output' } })
     }
 
     process() {
-        this.pins['out'].value = !(this.pins['in0'].value || this.pins['in1'].value)
-        this.active = this.pins.out.value
+        this.pins.out.value = (this.pins.in0.value !== this.pins.in1.value)
     }
 }
 
-export class XorGate {
-    constructor({ id, label, position }) {
-        this.id = id
-        this.type = 'gate/xor'
-        this.label = label
-        this.position = position
-        this.pins = {
-            in0: { type: 'input', value: false },
-            in1: { type: 'input', value: false },
-            out: { type: 'output', value: false }
-        }
-        this.active = this.pins.out.value
+export class XnorGate extends Component {
+    constructor(options) {
+        super({ ...options, type: 'gate/xnor', pins: { 'in0': 'input', 'in1': 'input', 'out': 'output' } })
     }
 
     process() {
-        const a = this.pins['in0'].value
-        const b = this.pins['in1'].value
-        this.pins['out'].value = a !== b
-        this.active = this.pins.out.value
+        this.pins.out.value = (this.pins.in0.value === this.pins.in1.value)
     }
 }
 
-export class XnorGate {
-    constructor({ id, label, position }) {
-        this.id = id
-        this.type = 'gate/xnor'
-        this.label = label
-        this.position = position
-        this.pins = {
-            in0: { type: 'input', value: false },
-            in1: { type: 'input', value: false },
-            out: { type: 'output', value: true }
-        }
+export class DisplayProbe extends Component {
+    constructor(options) {
+        super({ ...options, type: 'probe/display', pins: { 'in': 'input' } })
+        this.active = false
     }
 
-    process() {
-        const a = this.pins['in0'].value
-        const b = this.pins['in1'].value
-        this.pins['out'].value = a === b
-        this.active = this.pins.out.value
-    }
-}
-
-export class DisplayProbe {
-    constructor({ id, label, position }) {
-        this.id = id
-        this.type = 'probe/display'
-        this.label = label
-        this.position = position
-        this.pins = {
-            in: { type: 'input', value: false, component: this }
-        }
-        this.active = this.pins.in.value
+    isActive() {
+        return this.active
     }
 
     process() {
@@ -263,7 +186,7 @@ export class DisplayProbe {
     }
 
     getValue() {
-        return this.pins['in'].value ? 1 : 0
+        return this.active ? 1 : 0
     }
 }
 
@@ -272,15 +195,29 @@ export class Wire {
         this.id = id
         this.sourcePin = sourcePin
         this.targetPin = targetPin
-        this.from = from ? { ...from } : null
-        this.to = to ? { ...to } : null
-        this.active = this.targetPin ? this.targetPin.value : false
+        this.from = from
+        this.to = to
+        this.active = false
+    }
+
+    isActive() {
+        return this.targetPin?.value
+    }
+
+    connectTo(pin) {
+        this[pin.type === 'output' ? 'sourcePin' : 'targetPin'] = pin
+        pin.connectedWires.push(this)
+    }
+
+    disconnectFrom(pin) {
+        this[pin.type === 'output' ? 'sourcePin' : 'targetPin'] = undefined
+        console.log('disconnecting from pin', pin.id)
+        console.log('before:', pin.connectedWires.map(w => w.id))
+        pin.connectedWires.splice(pin.connectedWires.indexOf(this), 1)
+        console.log('after:', pin.connectedWires.map(w => w.id))
     }
 
     propagateSignal() {
-        if (this.sourcePin && this.targetPin) {
-            this.targetPin.value = this.sourcePin.value
-            this.active = this.targetPin.value
-        }
+        (this.targetPin || {}).value = this.sourcePin?.value
     }
 }

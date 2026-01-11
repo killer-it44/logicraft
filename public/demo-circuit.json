@@ -5,15 +5,13 @@
 			"id": "toggle0",
 			"type": "source/toggle",
 			"label": "Input A",
-			"position": { "x": 100, "y": 100 },
-			"active": false
+			"position": { "x": 100, "y": 100 }
 		},
 		{
 			"id": "toggle1",
 			"type": "source/toggle",
 			"label": "Input B",
-			"position": { "x": 100, "y": 150 },
-			"active": false
+			"position": { "x": 100, "y": 150 }
 		},
 		{
 			"id": "not0",

@@ -1,4 +1,4 @@
-import { html, useLayoutEffect, useMemo } from 'preact-standalone'
+import { html } from 'preact-standalone'
 
 const FONT_FAMILY = 'Space Grotesk, sans-serif'
 const fillColor = (active) => active ? '#22c55e' : '#f87171'
@@ -6,23 +6,9 @@ const lineColor = (active) => active ? '#047857' : '#b91c1c'
 const inputPinRadius = 3
 const outputPinRadius = 2
 
-// REVISE if we send relative positions for pins, we don't need to update the registry on every drag
-const useRegisterPins = (id, pinRegistry, pins) => {
-    useLayoutEffect(() => {
-        pinRegistry.set(id, pins)
-        return () => pinRegistry.delete(id)
-    }, [pins])
-}
-
-export const ToggleNode = ({ id, label, position, active, pinRegistry }) => {
+export const ToggleNode = ({ label, position, active }) => {
     const trackW = 40, trackH = 20, trackR = trackH / 2, knobR = trackR - 2.5
     const knobX = (active ? trackW - trackR : trackR)
-
-    const pins = useMemo(() => [
-        { id: 'out', x: position.x + trackW + 10, y: position.y + trackR }
-    ], [position.x, position.y])
-
-    useRegisterPins(id, pinRegistry, pins)
 
     return html`
         <g transform=${`translate(${position.x} ${position.y})`}>
@@ -39,18 +25,12 @@ export const ToggleNode = ({ id, label, position, active, pinRegistry }) => {
         </g>
     `
 }
+ToggleNode.pinPositions = { out: { x: 50, y: 10 } }
 
-export const NotGateNode = ({ id, label, position, active, pinRegistry }) => {
+export const NotGateNode = ({ label, position, active }) => {
     const pinY = 10, startX = 0, height = 20, tipX = 20, bubbleRadius = 5
     const bubbleCenterX = tipX + bubbleRadius
     const outputX = bubbleCenterX + bubbleRadius + 10
-
-    const pins = useMemo(() => [
-        { id: 'in', x: position.x - 10, y: position.y + pinY },
-        { id: 'out', x: position.x + outputX, y: position.y + pinY }
-    ], [position.x, position.y])
-
-    useRegisterPins(id, pinRegistry, pins)
 
     return html`
         <g transform=${`translate(${position.x} ${position.y})`}>
@@ -66,16 +46,9 @@ export const NotGateNode = ({ id, label, position, active, pinRegistry }) => {
         </g>
     `
 }
+NotGateNode.pinPositions = { in: { x: -10, y: 10 }, out: { x: 40, y: 10 } }
 
-export const AndGateNode = ({ id, label, position, active, pinRegistry }) => {
-    const pins = useMemo(() => [
-        { id: 'in0', x: position.x - 10, y: position.y + 10 },
-        { id: 'in1', x: position.x - 10, y: position.y + 30 },
-        { id: 'out', x: position.x + 50, y: position.y + 20 }
-    ], [position.x, position.y])
-
-    useRegisterPins(id, pinRegistry, pins)
-
+export const AndGateNode = ({ label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`}>
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
@@ -91,16 +64,9 @@ export const AndGateNode = ({ id, label, position, active, pinRegistry }) => {
         </g>
     `
 }
+AndGateNode.pinPositions = { in0: { x: -10, y: 10 }, in1: { x: -10, y: 30 }, out: { x: 50, y: 20 } }
 
-export const OrGateNode = ({ id, label, position, active, pinRegistry }) => {
-    const pins = useMemo(() => [
-        { id: 'in0', x: position.x - 10, y: position.y + 10 },
-        { id: 'in1', x: position.x - 10, y: position.y + 30 },
-        { id: 'out', x: position.x + 50, y: position.y + 20 }
-    ], [position.x, position.y])
-
-    useRegisterPins(id, pinRegistry, pins)
-
+export const OrGateNode = ({ label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`} stroke-width="2">
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
@@ -116,16 +82,9 @@ export const OrGateNode = ({ id, label, position, active, pinRegistry }) => {
         </g>
     `
 }
+OrGateNode.pinPositions = { in0: { x: -10, y: 10 }, in1: { x: -10, y: 30 }, out: { x: 50, y: 20 } }
 
-export const NandGateNode = ({ id, label, position, active, pinRegistry }) => {
-    const pins = useMemo(() => [
-        { id: 'in0', x: position.x - 10, y: position.y + 10 },
-        { id: 'in1', x: position.x - 10, y: position.y + 30 },
-        { id: 'out', x: position.x + 50, y: position.y + 20 }
-    ], [position.x, position.y])
-
-    useRegisterPins(id, pinRegistry, pins)
-
+export const NandGateNode = ({ label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`}>
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
@@ -142,16 +101,9 @@ export const NandGateNode = ({ id, label, position, active, pinRegistry }) => {
         </g>
     `
 }
+NandGateNode.pinPositions = { in0: { x: -10, y: 10 }, in1: { x: -10, y: 30 }, out: { x: 50, y: 20 } }
 
-export const NorGateNode = ({ id, label, position, active, pinRegistry }) => {
-    const pins = useMemo(() => [
-        { id: 'in0', x: position.x - 10, y: position.y + 10 },
-        { id: 'in1', x: position.x - 10, y: position.y + 30 },
-        { id: 'out', x: position.x + 50, y: position.y + 20 }
-    ], [position.x, position.y])
-
-    useRegisterPins(id, pinRegistry, pins)
-
+export const NorGateNode = ({ label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`}>
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
@@ -168,16 +120,9 @@ export const NorGateNode = ({ id, label, position, active, pinRegistry }) => {
         </g>
     `
 }
+NorGateNode.pinPositions = { in0: { x: -10, y: 10 }, in1: { x: -10, y: 30 }, out: { x: 50, y: 20 } }
 
-export const XorGateNode = ({ id, label, position, active, pinRegistry }) => {
-    const pins = useMemo(() => [
-        { id: 'in0', x: position.x - 10, y: position.y + 10 },
-        { id: 'in1', x: position.x - 10, y: position.y + 30 },
-        { id: 'out', x: position.x + 50, y: position.y + 20 }
-    ], [position.x, position.y])
-
-    useRegisterPins(id, pinRegistry, pins)
-
+export const XorGateNode = ({ label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`}>
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
@@ -194,16 +139,9 @@ export const XorGateNode = ({ id, label, position, active, pinRegistry }) => {
         </g>
     `
 }
+XorGateNode.pinPositions = { in0: { x: -10, y: 10 }, in1: { x: -10, y: 30 }, out: { x: 50, y: 20 } }
 
-export const XnorGateNode = ({ id, label, position, active, pinRegistry }) => {
-    const pins = useMemo(() => [
-        { id: 'in0', x: position.x - 10, y: position.y + 10 },
-        { id: 'in1', x: position.x - 10, y: position.y + 30 },
-        { id: 'out', x: position.x + 50, y: position.y + 20 }
-    ], [position.x, position.y])
-
-    useRegisterPins(id, pinRegistry, pins)
-
+export const XnorGateNode = ({ label, position, active }) => {
     return html`
         <g transform=${`translate(${position.x} ${position.y})`}>
             <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
@@ -221,15 +159,10 @@ export const XnorGateNode = ({ id, label, position, active, pinRegistry }) => {
         </g>
     `
 }
+XorGateNode.pinPositions = { in0: { x: -10, y: 10 }, in1: { x: -10, y: 30 }, out: { x: 50, y: 20 } }
 
-export const DisplayProbeNode = ({ id, label, position, active, pinRegistry }) => {
+export const DisplayProbeNode = ({ label, position, active }) => {
     const width = 20, height = 20, borderRadius = height / 4
-
-    const pins = useMemo(() => [
-        { id: 'in', x: position.x - 10, y: position.y + height / 2 }
-    ], [position.x, position.y])
-
-    useRegisterPins(id, pinRegistry, pins)
 
     return html`
         <g transform=${`translate(${position.x} ${position.y})`}>
@@ -245,10 +178,11 @@ export const DisplayProbeNode = ({ id, label, position, active, pinRegistry }) =
         </g>
     `
 }
+DisplayProbeNode.pinPositions = { in: { x: -10, y: 10 } }
 
 export const WirePath = ({ from, sourcePin, to, targetPin, active }) => {
     const points = [from, to].map((p) => `${p.x},${p.y}`).join(' ')
-    
+
     return html`
         <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="1">
             <polyline points=${points} fill="none" stroke="white" opacity="0" stroke-width="10"/>
