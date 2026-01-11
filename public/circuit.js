@@ -211,10 +211,7 @@ export class Wire {
 
     disconnectFrom(pin) {
         this[pin.type === 'output' ? 'sourcePin' : 'targetPin'] = undefined
-        console.log('disconnecting from pin', pin.id)
-        console.log('before:', pin.connectedWires.map(w => w.id))
         pin.connectedWires.splice(pin.connectedWires.indexOf(this), 1)
-        console.log('after:', pin.connectedWires.map(w => w.id))
     }
 
     propagateSignal() {
