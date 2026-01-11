@@ -159,7 +159,7 @@ export const XnorGateNode = ({ label, position, active }) => {
         </g>
     `
 }
-XorGateNode.pinPositions = { in0: { x: -10, y: 10 }, in1: { x: -10, y: 30 }, out: { x: 50, y: 20 } }
+XnorGateNode.pinPositions = { in0: { x: -10, y: 10 }, in1: { x: -10, y: 30 }, out: { x: 50, y: 20 } }
 
 export const DisplayProbeNode = ({ label, position, active }) => {
     const width = 20, height = 20, borderRadius = height / 4

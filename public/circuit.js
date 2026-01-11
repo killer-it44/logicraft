@@ -23,8 +23,8 @@ export default class Circuit {
     }
 
     deleteWire(wire) {
-        wire.disconnectFrom(wire.sourcePin)
-        wire.disconnectFrom(wire.targetPin)
+        if (wire.sourcePin) wire.disconnectFrom(wire.sourcePin)
+        if (wire.targetPin) wire.disconnectFrom(wire.targetPin)
         this.wires.splice(this.wires.indexOf(wire), 1)
     }
 
