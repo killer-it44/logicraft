@@ -7,11 +7,9 @@ export function ComponentLibrary({ components, onCreate }) {
     return html`
         <style>
             .library-component {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-                padding: 12px 14px;
+                border-radius: 6px;
                 background: #ffffff;
+                padding: 12px 14px;
                 transition: transform 0.15s ease;
                 text-align: left;
             }
@@ -19,7 +17,7 @@ export function ComponentLibrary({ components, onCreate }) {
                 transform: translateX(4px);
             }
         </style>
-        <button style="background: none; border: none; position: absolute; top: 4px; right: 12px;" type="button" onClick=${() => setMinimized(!isMinimized)}>
+        <button style="position: absolute; top: 4px; right: 12px;" type="button" onClick=${() => setMinimized(!isMinimized)}>
             ${isMinimized ? '＞' : '＜'}
         </button>
         ${isMinimized ? html`<div>📁</div>` : html`

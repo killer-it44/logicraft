@@ -127,6 +127,11 @@ export function App() {
     const selectWire = (wire, startPoint, isDraggingFrom, isDraggingTo) => {
         const offsetFrom = subPoints(startPoint, wire.from)
         const offsetTo = subPoints(startPoint, wire.to)
+        if (isDraggingFrom && isDraggingTo && wire.from.x === wire.to.x && wire.from.y === wire.to.y) {
+            if (wire.targetPin && !wire.sourcePin) isDraggingTo = false
+            if (!wire.targetPin && wire.sourcePin) isDraggingFrom = false
+            if (!wire.targetPin && !wire.sourcePin) isDraggingFrom = false
+        }
         selection.current = { element: wire, startPoint, offsetFrom, offsetTo, isDraggingFrom, isDraggingTo }
     }
 
@@ -269,7 +274,7 @@ export function App() {
                 align-items: center;
                 gap: 8px;
             }
-            aside input, aside button {
+            aside input {
                 border: 1px solid #94a3b880;
                 border-radius: 6px;
                 font: inherit;
@@ -281,30 +286,39 @@ export function App() {
                 background: #0f172aff;
             }
             aside button {
-                font-weight: bold;
-                background: #2563eb;
                 cursor: pointer;
+                border: none;
+                padding: 0;
+                background: none;
+                color: inherit;
+                font: inherit;
+            }
+            aside button:hover {
+                filter: drop-shadow(0 0 2px #ffffff);
+            }
+            aside button:has(img) {
+                line-height: 0;
             }
             .selected {
-                filter: drop-shadow(0 0 6px #0051ffff);
+                filter: drop-shadow(0 0 6px #0f172ad9);
             }
         </style>
         <aside style="position: fixed; top: 16px; left: 16px;">
             <input type="text" value=${circuit.title} onInput=${(e) => setCircuit(new Circuit({ title: e.target.value, components: circuit.components, wires: circuit.wires }))} style="width: 160px;" />
-            <button type="button" onClick=${open}>Open</button>
-            <button type="button" onClick=${save}>Save</button>
+            <button type="button" title="Open" onClick=${open}><img src="icons/open.svg" /></button>
+            <button type="button" title="Save" onClick=${save}><img src="icons/save.svg" /></button>
         </aside>
         <aside style="position: fixed; top: 16px; left: 50%; transform: translateX(-50%);">
             <label>
                 <span style="font-weight: bold;">Steps per Tick: </span>
                 <input type="number" min="2" step="1" value=${simulationController.stepsPerTick} onInput=${(e) => setStepsPerTick(Number(e.target.value))} />
             </label>
-            <img onClick=${step} title="One single step" src="icons/step.svg" width="28" height="28" />
-            <img onClick=${tick} title="One full clock tick" src="icons/tick.svg" width="28" height="28" />
-            <img onClick=${playOrPause} title=${simulationController.isPlaying ? 'Pause' : 'Play continuously'} src=${simulationController.isPlaying ? 'icons/pause.svg' : 'icons/play.svg'} width="28" height="28" />
-            <img onClick=${reset} title="Reset" src="icons/reset.svg" width="28" height="28" />
+            <button type="button" title="One single step" onClick=${step}><img src="icons/step.svg" /></button>
+            <button type="button" title="One full clock tick" onClick=${tick}><img src="icons/tick.svg" /></button>
+            <button type="button" title=${simulationController.isPlaying ? 'Pause' : 'Play continuously'} onClick=${playOrPause}><img src=${simulationController.isPlaying ? 'icons/pause.svg' : 'icons/play.svg'} /></button>
+            <button type="button" title="Reset" onClick=${reset}><img src="icons/reset.svg" /></button>
         </aside>    
-        <main style="overflow: hidden;">
+        <main style="width: 100vw; height: 100vh; overflow: hidden;">
             <svg ref=${svg} width="100vw" height="100vh" viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}" style="cursor: ${selection.current ? 'grabbing' : 'default'};"
                 onPointerDown=${pointerDown} onPointerMove=${move} onPointerUp=${pointerUp} onPointerCancel=${pointerUp} onContextMenu=${(e) => e.preventDefault()} onWheel=${wheel} onPointerLeave=${() => svg.current.isActive = false} onPointerEnter=${() => svg.current.isActive = true}
             >
@@ -333,7 +347,9 @@ export function App() {
         </aside>
         <aside style="position: fixed; bottom: 16px; right: 16px;">
             x: ${Math.round(pointerPosition.x)}, y: ${Math.round(pointerPosition.y)}
-            <button style="background: none; border: none;" type="button" onClick=${() => setViewBox(INITIAL_VIEWBOX)}>⌂</button>
+            <button title="Home" type="button" onClick=${() => setViewBox(INITIAL_VIEWBOX)}>
+                <img src="icons/home.svg" width="16" height="16" />
+            </button>
         </aside>
     `
 }
