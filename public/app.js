@@ -1,6 +1,6 @@
 import { html, useRef, useState, useEffect } from 'preact-standalone'
-import Circuit, { Component, ToggleSource, NotGate, AndGate, OrGate, NandGate, NorGate, XorGate, XnorGate, DisplayProbe, Wire } from './circuit.js'
-import { ToggleNode, NotGateNode, AndGateNode, OrGateNode, NandGateNode, NorGateNode, XorGateNode, XnorGateNode, DisplayProbeNode, WirePath } from './ui-components.js'
+import Circuit, { Component, ToggleSource, Clock, NotGate, AndGate, OrGate, NandGate, NorGate, XorGate, XnorGate, DisplayProbe, Wire } from './circuit.js'
+import { ToggleNode, ClockNode, NotGateNode, AndGateNode, OrGateNode, NandGateNode, NorGateNode, XorGateNode, XnorGateNode, DisplayProbeNode, WirePath } from './ui-components.js'
 import { SimulationController } from './simulation-controller.js'
 import { ComponentLibrary } from './component-library.js'
 
@@ -23,15 +23,16 @@ const subPoints = (p1, p2) => ({ x: p1.x - p2.x, y: p1.y - p2.y })
 const distance = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y)
 
 const Components = {
-    'source/toggle': { UI: ToggleNode, Model: ToggleSource, title: 'Toggle Source', shortTitle: 'Toggle', description: 'Manual binary switch.', accent: '#fb923c' },
-    'gate/not': { UI: NotGateNode, Model: NotGate, title: 'NOT Gate', shortTitle: 'NOT', description: 'Inverts a single signal.', accent: '#0ea5e9' },
-    'gate/and': { UI: AndGateNode, Model: AndGate, title: 'AND Gate', shortTitle: 'AND', description: 'Outputs 1 when both inputs are 1.', accent: '#10b981' },
-    'gate/or': { UI: OrGateNode, Model: OrGate, title: 'OR Gate', shortTitle: 'OR', description: 'Outputs 1 when any input is 1.', accent: '#fbbf24' },
-    'gate/nand': { UI: NandGateNode, Model: NandGate, title: 'NAND Gate', shortTitle: 'NAND', description: 'Inverse of AND output.', accent: '#f43f5e' },
-    'gate/nor': { UI: NorGateNode, Model: NorGate, title: 'NOR Gate', shortTitle: 'NOR', description: 'Inverse of OR output.', accent: '#8b5cf6' },
-    'gate/xor': { UI: XorGateNode, Model: XorGate, title: 'XOR Gate', shortTitle: 'XOR', description: 'True when inputs differ.', accent: '#22d3ee' },
-    'gate/xnor': { UI: XnorGateNode, Model: XnorGate, title: 'XNOR Gate', shortTitle: 'XNOR', description: 'True when inputs are the same.', accent: '#a3e635' },
-    'probe/display': { UI: DisplayProbeNode, Model: DisplayProbe, title: 'Display', shortTitle: 'Display', description: 'Visualizes an input signal.', accent: '#f97316' }
+    'source/toggle': { UI: ToggleNode, Model: ToggleSource, title: 'Toggle Source', shortTitle: 'Toggle', description: 'Manual binary switch.' },
+    'source/clock': { UI: ClockNode, Model: Clock, title: 'Clock', shortTitle: 'Clock', description: 'Outputs 1 on tick' },
+    'gate/not': { UI: NotGateNode, Model: NotGate, title: 'NOT Gate', shortTitle: 'NOT', description: 'Inverts a single signal.' },
+    'gate/and': { UI: AndGateNode, Model: AndGate, title: 'AND Gate', shortTitle: 'AND', description: 'Outputs 1 when both inputs are 1.' },
+    'gate/or': { UI: OrGateNode, Model: OrGate, title: 'OR Gate', shortTitle: 'OR', description: 'Outputs 1 when any input is 1.' },
+    'gate/nand': { UI: NandGateNode, Model: NandGate, title: 'NAND Gate', shortTitle: 'NAND', description: 'Inverse of AND output.' },
+    'gate/nor': { UI: NorGateNode, Model: NorGate, title: 'NOR Gate', shortTitle: 'NOR', description: 'Inverse of OR output.' },
+    'gate/xor': { UI: XorGateNode, Model: XorGate, title: 'XOR Gate', shortTitle: 'XOR', description: 'True when inputs differ.' },
+    'gate/xnor': { UI: XnorGateNode, Model: XnorGate, title: 'XNOR Gate', shortTitle: 'XNOR', description: 'True when inputs are the same.' },
+    'probe/display': { UI: DisplayProbeNode, Model: DisplayProbe, title: 'Display', shortTitle: 'Display', description: 'Visualizes an input signal.' }
 }
 
 export function App() {
@@ -41,33 +42,62 @@ export function App() {
     const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 })
     const [selectedElement, setSelectedElement] = useState()
     const [circuit, setCircuit] = useState(new Circuit({ title: 'Untitled Circuit', components: [], wires: [] }))
-    const [simulationController, setSimulationController] = useState(new SimulationController({ stepsPerTick: 2 }))
+    const [pastCircuits, setPastCircuits] = useState([])
+    const [futureCircuits, setFutureCircuits] = useState([])
+    const [simulationController, setSimulationController] = useState(new SimulationController({ stepsPerClockTick: 10 }))
 
     useEffect(() => {
-        const onKeyDown = (e) => {
-            if (e.key !== 'Backspace' && e.key !== 'Delete') return
-            if (!svg.current.isActive || !selectedElement) return
+        window.addEventListener('keydown', onKeyDown)
+        return () => window.removeEventListener('keydown', onKeyDown)
+    })
+
+    const onKeyDown = (e) => {
+        if (((e.ctrlKey && e.key.toLowerCase() === 'y') || (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'z')) && futureCircuits.length) {
+            e.preventDefault()
+            redo()
+        } else if (((e.ctrlKey && e.key.toLowerCase() === 'z') || (e.metaKey && !e.shiftKey && e.key.toLowerCase() === 'z')) && pastCircuits.length) {
+            e.preventDefault()
+            undo()
+        } else if ((e.key === 'Backspace' || e.key === 'Delete') && svg.current.isActive && selectedElement) {
+            e.preventDefault()
             deleteElement(selectedElement)
             setSelectedElement(undefined)
         }
+    }
 
-        window.addEventListener('keydown', onKeyDown)
-        return () => window.removeEventListener('keydown', onKeyDown)
-    }, [selectedElement])
+    const undo = () => {
+        const previous = Circuit.fromJSON(pastCircuits[pastCircuits.length - 1])
+        simulationController.pause()
+        setPastCircuits(pastCircuits.slice(0, pastCircuits.length - 1))
+        setFutureCircuits([circuit.toJSON(), ...futureCircuits])
+        setCircuit(previous)
+        setSelectedElement(undefined)
+    }
+
+    const redo = () => {
+        const next = Circuit.fromJSON(futureCircuits[0])
+        simulationController.pause()
+        setPastCircuits([...pastCircuits, circuit.toJSON()])
+        setFutureCircuits(futureCircuits.slice(1))
+        setCircuit(next)
+        setSelectedElement(undefined)
+    }
 
     const addComponent = (type) => {
+        setPastCircuits([...pastCircuits, circuit.toJSON()])
         const position = snapToGrid({ x: viewBox.x + 200, y: viewBox.y + 100 })
         const c = new Components[type].Model({ id: circuit.nextId(type.split('/')[1]), position })
         setCircuit(new Circuit({ title: circuit.title, components: [...circuit.components, c], wires: circuit.wires }))
     }
 
     const deleteElement = (element) => {
-        (element instanceof Component) ? circuit.deleteComponent(element) : circuit.deleteWire(element)
+        setPastCircuits([...pastCircuits, circuit.toJSON()])
+        circuit[element instanceof Component ? 'deleteComponent' : 'deleteWire'](element)
         setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
     }
 
-    const setStepsPerTick = (steps) => {
-        const newSimulationController = new SimulationController({ stepsPerTick: steps })
+    const setStepsPerClockTick = (steps) => {
+        const newSimulationController = new SimulationController({ stepsPerClockTick: steps })
         if (simulationController.isPlaying) {
             simulationController.pause()
             newSimulationController.play(circuit, function onTick() {
@@ -83,16 +113,17 @@ export function App() {
     }
 
     const tick = () => {
-        simulationController.tick(circuit)
-        setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
+        simulationController.tick(function onStep() {
+            setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
+        })
     }
 
     const playOrPause = () => {
-        const newSimulationController = new SimulationController({ stepsPerTick: simulationController.stepsPerTick })
+        const newSimulationController = new SimulationController({ stepsPerClockTick: simulationController.stepsPerClockTick })
         if (simulationController.isPlaying) {
             simulationController.pause()
         } else {
-            newSimulationController.play(circuit, function onTick() {
+            newSimulationController.play(circuit, function onStep() {
                 setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
             })
         }
@@ -100,7 +131,7 @@ export function App() {
     }
 
     const reset = () => {
-        circuit.resetState()
+        simulationController.reset(circuit)
         setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
     }
 
@@ -145,6 +176,7 @@ export function App() {
     const pointerDown = (event, element) => {
         event.preventDefault()
         if (event.button === 0 && element) {
+            const snapshot = circuit.toJSON()
             const startPoint = toSvgPoint(event.clientX, event.clientY)
             if (element instanceof Component) {
                 const pinInRange = findPinInRange(startPoint)
@@ -157,8 +189,8 @@ export function App() {
                 const wire = element
                 selectWire(wire, startPoint, distance(startPoint, wire.from) < 10, distance(startPoint, wire.to) < 10)
             }
+            selection.current.snapshot = snapshot
         }
-
         setSelectedElement(selection.current?.element)
     }
 
@@ -206,12 +238,12 @@ export function App() {
     }
 
     const pointerUp = () => {
-        if (selection.current && !selection.current.isDragging) {
-            if (selection.current.element.type === 'source/toggle') {
-                selection.current.element.toggle()
-                setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
-            }
+        if (!selection.current) return
+        if (selection.current.element.type === 'source/toggle' && !selection.current.isDragging) {
+            selection.current.element.toggle()
+            setCircuit(new Circuit({ title: circuit.title, components: circuit.components, wires: circuit.wires }))
         }
+        setPastCircuits([...pastCircuits, selection.current.snapshot])
         selection.current = undefined
     }
 
@@ -293,8 +325,12 @@ export function App() {
                 color: inherit;
                 font: inherit;
             }
-            aside button:hover {
+            aside button:hover:enabled {
                 filter: drop-shadow(0 0 2px #ffffff);
+            }
+            aside button:disabled {
+                cursor: default;
+                color: #666666;
             }
             aside button:has(img) {
                 line-height: 0;
@@ -307,21 +343,24 @@ export function App() {
             <input type="text" value=${circuit.title} onInput=${(e) => setCircuit(new Circuit({ title: e.target.value, components: circuit.components, wires: circuit.wires }))} style="width: 160px;" />
             <button type="button" title="Open" onClick=${open}><img src="icons/open.svg" /></button>
             <button type="button" title="Save" onClick=${save}><img src="icons/save.svg" /></button>
+            <span style="font-size: 28px; color: #999999; user-select: none;">|</span>
+            <button disabled=${pastCircuits.length === 0} type="button" title="Undo" onClick=${undo}>↩</button>
+            <button disabled=${futureCircuits.length === 0} type="button" title="Redo" onClick=${redo}>↪</button>
         </aside>
         <aside style="position: fixed; top: 16px; left: 50%; transform: translateX(-50%);">
             <label>
-                <span style="font-weight: bold;">Steps per Tick: </span>
-                <input type="number" min="2" step="1" value=${simulationController.stepsPerTick} onInput=${(e) => setStepsPerTick(Number(e.target.value))} />
+                <span style="font-weight: bold;">Steps / clock tick: </span>
+                <input type="number" min="4" step="2" value=${simulationController.stepsPerClockTick} onInput=${(e) => setStepsPerClockTick(Number(e.target.value))} />
             </label>
             <button type="button" title="One single step" onClick=${step}><img src="icons/step.svg" /></button>
             <button type="button" title="One full clock tick" onClick=${tick}><img src="icons/tick.svg" /></button>
             <button type="button" title=${simulationController.isPlaying ? 'Pause' : 'Play continuously'} onClick=${playOrPause}><img src=${simulationController.isPlaying ? 'icons/pause.svg' : 'icons/play.svg'} /></button>
             <button type="button" title="Reset" onClick=${reset}><img src="icons/reset.svg" /></button>
         </aside>    
-        <main style="width: 100vw; height: 100vh; overflow: hidden;">
-            <svg ref=${svg} width="100vw" height="100vh" viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}" style="cursor: ${selection.current ? 'grabbing' : 'default'};"
+        <main style="width: 100vw; height: 100vh; overflow: hidden; cursor: ${selection.current ? 'grabbing' : 'default'};"
                 onPointerDown=${pointerDown} onPointerMove=${move} onPointerUp=${pointerUp} onPointerCancel=${pointerUp} onContextMenu=${(e) => e.preventDefault()} onWheel=${wheel} onPointerLeave=${() => svg.current.isActive = false} onPointerEnter=${() => svg.current.isActive = true}
-            >
+        >
+            <svg ref=${svg} width="100vw" height="100vh" viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}">
                 <defs>
                     <pattern id="grid-pattern" width=${GRID_SPACING} height=${GRID_SPACING} patternUnits="userSpaceOnUse">
                         <path d=${`M ${GRID_SPACING} 0 L 0 0 0 ${GRID_SPACING}`} fill="none" stroke="#cbd5f5" stroke-width="1" />

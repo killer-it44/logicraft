@@ -27,6 +27,21 @@ export const ToggleNode = ({ label, position, active }) => {
 }
 ToggleNode.pinPositions = { out: { x: 50, y: 10 } }
 
+export const ClockNode = ({ label, position, active }) => {
+    return html`
+        <g transform=${`translate(${position.x} ${position.y})`}>
+            <text y="-8" text-anchor="left" font-family=${FONT_FAMILY} font-size="12" font-weight="400">${label}</text>
+            <g fill=${fillColor(active)} stroke=${lineColor(active)} stroke-width="2">
+                <line x1="20" y1="10" x2="30" y2="10" />
+                <circle cx="10" cy="10" r="10" />
+                <circle stroke-width="0" cx="30" cy="10" r=${outputPinRadius} />
+                <path d="M 4 14 H 8 V 6 H 12 V 14 H 16" />
+            </g>
+        </g>
+    `
+}
+ClockNode.pinPositions = { out: { x: 30, y: 10 } }
+
 export const NotGateNode = ({ label, position, active }) => {
     const pinY = 10, startX = 0, height = 20, tipX = 20, bubbleRadius = 5
     const bubbleCenterX = tipX + bubbleRadius

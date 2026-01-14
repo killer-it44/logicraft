@@ -37,51 +37,54 @@ export default class Circuit {
         const path = (pin) => pin ? `${pin.component.id}/${pin.id}` : null
         return {
             title: this.title,
-            components: this.components.map(c => ({ id: c.id, type: c.type, label: c.label, position: c.position })),
-            wires: this.wires.map(w => ({ id: w.id, source: path(w.sourcePin), target: path(w.targetPin), from: w.from, to: w.to }))
+            components: this.components.map(c => {
+                const pinStates = Object.fromEntries(Object.entries(c.pins).map(([pId, pin]) => [pId, pin.value]))
+                return { id: c.id, type: c.type, label: c.label, position: c.position, pinStates }
+            }),
+            wires: this.wires.map(w => {
+                return { id: w.id, source: path(w.sourcePin), target: path(w.targetPin), from: w.from, to: w.to }
+            })
         }
     }
 
     static fromJSON(json) {
         const components = json.components.map((compJson) => {
-            const baseConfig = { id: compJson.id, label: compJson.label, position: compJson.position }
-
             switch (compJson.type) {
-                case 'source/toggle': return new ToggleSource({ ...baseConfig, active: compJson.active })
-                case 'gate/not': return new NotGate(baseConfig)
-                case 'gate/and': return new AndGate(baseConfig)
-                case 'gate/or': return new OrGate(baseConfig)
-                case 'gate/nand': return new NandGate(baseConfig)
-                case 'gate/nor': return new NorGate(baseConfig)
-                case 'gate/xor': return new XorGate(baseConfig)
-                case 'gate/xnor': return new XnorGate(baseConfig)
-                case 'probe/display': return new DisplayProbe(baseConfig)
+                case 'source/toggle': return new ToggleSource(compJson)
+                case 'source/clock': return new Clock(compJson)
+                case 'gate/not': return new NotGate(compJson)
+                case 'gate/and': return new AndGate(compJson)
+                case 'gate/or': return new OrGate(compJson)
+                case 'gate/nand': return new NandGate(compJson)
+                case 'gate/nor': return new NorGate(compJson)
+                case 'gate/xor': return new XorGate(compJson)
+                case 'gate/xnor': return new XnorGate(compJson)
+                case 'probe/display': return new DisplayProbe(compJson)
                 default: throw new Error(`Unknown component type: ${compJson.type}`)
             }
         })
 
         const wires = json.wires.map((wireJson) => {
+            const wire = new Wire({ id: wireJson.id, from: wireJson.from, to: wireJson.to })
             const [sourceCompId, sourcePinId] = wireJson.source ? wireJson.source.split('/') : []
-            const sourcePin = sourceCompId ? components.find(c => c.id === sourceCompId).pins[sourcePinId] : undefined
+            if (sourceCompId) wire.connectTo(components.find(c => c.id === sourceCompId).pins[sourcePinId])
             const [targetCompId, targetPinId] = wireJson.target ? wireJson.target.split('/') : []
-            const targetPin = targetCompId ? components.find(c => c.id === targetCompId).pins[targetPinId] : undefined
-            const [from, to] = [wireJson.from, wireJson.to]
-            return new Wire({ id: wireJson.id, sourcePin, targetPin, from, to })
+            if (targetCompId) wire.connectTo(components.find(c => c.id === targetCompId).pins[targetPinId])
+            return wire
         })
         return new Circuit({ title: json.title, components, wires })
     }
 }
 
 export class Component {
-    constructor({ id, type, label, position, pins }) {
+    constructor({ id, type, label, position, pins, pinStates = {} }) {
         this.id = id
         this.type = type
         this.label = label
         this.position = position
-        this.pins = {}
-        Object.entries(pins).forEach(([pId, type]) => {
-            this.pins[pId] = { id: pId, type, connectedWires: [], value: false, component: this }
-        })
+        this.pins = Object.fromEntries(Object.entries(pins).map(([pId, type]) => {
+            return [pId, { id: pId, type, connectedWires: [], value: Boolean(pinStates[pId]), component: this }]
+        }))
     }
 
     isActive() {
@@ -92,12 +95,34 @@ export class Component {
 export class ToggleSource extends Component {
     constructor(options) {
         super({ ...options, type: 'source/toggle', pins: { 'out': 'output' } })
+        this.active = false
     }
 
-    process() { }
+    process() { 
+        this.pins.out.value = this.active
+    }
 
     toggle() {
-        this.pins.out.value = !this.pins.out.value
+        this.active = !this.active
+    }
+
+    isActive() {
+        return this.active
+    }
+}
+
+export class Clock extends Component {
+    constructor(options) {
+        super({ ...options, type: 'source/clock', pins: { 'out': 'output' } })
+        this.active = false
+    }
+
+    process() { 
+        this.pins.out.value = this.active
+    }
+
+    tick(value) {
+        this.active = value
     }
 }
 
@@ -191,13 +216,12 @@ export class DisplayProbe extends Component {
 }
 
 export class Wire {
-    constructor({ id, sourcePin, targetPin, from, to }) {
+    constructor({ id, from, to }) {
         this.id = id
-        this.sourcePin = sourcePin
-        this.targetPin = targetPin
+        this.sourcePin = undefined
+        this.targetPin = undefined
         this.from = from
         this.to = to
-        this.active = false
     }
 
     isActive() {
