@@ -3,6 +3,7 @@ import Circuit, { Component, ToggleSource, Clock, NotGate, AndGate, OrGate, Nand
 import { ToggleNode, ClockNode, NotGateNode, AndGateNode, OrGateNode, NandGateNode, NorGateNode, XorGateNode, XnorGateNode, DisplayProbeNode, WirePath } from './ui-components.js'
 import { SimulationController } from './simulation-controller.js'
 import { ComponentLibrary } from './component-library.js'
+import { Properties } from './properties.js'
 
 const GRID_SPACING = 10
 const INITIAL_VIEWBOX = { x: 0, y: 0, width: 800, height: 480 }
@@ -385,10 +386,15 @@ export function App() {
             <${ComponentLibrary} components=${Object.entries(Components).map(Comp => ({ type: Comp[0], ...Comp[1] }))} onCreate=${addComponent} />
         </aside>
         <aside style="position: fixed; bottom: 16px; right: 16px;">
-            x: ${Math.round(pointerPosition.x)}, y: ${Math.round(pointerPosition.y)}
+            <span>x: ${Math.round(pointerPosition.x)}, y: ${Math.round(pointerPosition.y)}</span>
             <button title="Home" type="button" onClick=${() => setViewBox(INITIAL_VIEWBOX)}>
                 <img src="icons/home.svg" width="16" height="16" />
             </button>
         </aside>
+        ${selectedElement && html`
+        <aside style="position: fixed; right: 16px; top: 50%; transform: translateY(-50%);">
+            <${Properties} element=${selectedElement} />
+        </aside>
+        `}
     `
 }
