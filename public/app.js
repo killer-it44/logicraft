@@ -1,4 +1,4 @@
-import { html, useRef, useState, useEffect, useCallback } from 'preact-standalone'
+import { html, useRef, useState, useEffect } from 'preact-standalone'
 import Circuit, { Component, ToggleSource, Clock, NotGate, AndGate, OrGate, NandGate, NorGate, XorGate, XnorGate, DisplayProbe, Wire } from './circuit.js'
 import { ToggleNode, ClockNode, NotGateNode, AndGateNode, OrGateNode, NandGateNode, NorGateNode, XorGateNode, XnorGateNode, DisplayProbeNode, WirePath } from './ui-components.js'
 import { SimulationController } from './simulation-controller.js'
