@@ -18,7 +18,7 @@ export default class Circuit {
     }
 
     deleteComponent(component) {
-        Object.values(component.pins).forEach(pin => pin.connectedWires.forEach(wire => wire.disconnectFrom(pin)))
+        Object.values(component.pins).forEach(pin => [...pin.connectedWires].forEach(wire => wire.disconnectFrom(pin)))
         this.components.splice(this.components.indexOf(component), 1)
     }
 
@@ -123,6 +123,10 @@ export class Clock extends Component {
 
     tick(value) {
         this.active = value
+    }
+
+    isActive() {
+        return this.active
     }
 }
 
