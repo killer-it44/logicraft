@@ -113,7 +113,6 @@ export function App() {
         setSelectedElements([])
     }
     
-    // FIXME there's still some trouble with redo - when we do any action after undo, redo should be cleared
     const redo = () => {
         const next = Circuit.fromJSON(futureCircuits[0])
         simulationController.pause()
